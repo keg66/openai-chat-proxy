@@ -1,0 +1,7 @@
+# Phase 1: Flask version requirements
+Flask==3.0.0
+requests==2.31.0
+
+# Development and testing
+pytest==7.4.3
+pytest-flask==1.3.0
