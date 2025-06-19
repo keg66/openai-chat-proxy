@@ -28,6 +28,45 @@
 - `stream`: ストリーミング有効/無効（デフォルト: false）
 - `stop`: 停止文字列
 
+## クイックスタート
+
+### 簡単な動作確認
+
+付属のモックサーバーを使って、すぐにプロキシサーバーをテストできます：
+
+```bash
+# 1. 仮想環境のセットアップ
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# 2. 自動デモの実行
+cd sample_server
+./start_demo.sh
+```
+
+これにより、モックサーバーとプロキシサーバーが自動で起動し、包括的なテストが実行されます。
+
+### 手動テスト
+
+個別にサーバーを起動してテストする場合：
+
+```bash
+# ターミナル1: モックサーバーを起動
+source venv/bin/activate
+python sample_server/mock_chat_server.py
+
+# ターミナル2: プロキシサーバーを起動  
+source venv/bin/activate
+python app_flask.py
+
+# ターミナル3: テストを実行
+source venv/bin/activate
+python sample_server/test_demo.py
+# または
+./sample_server/curl_examples.sh
+```
+
 ## インストールと起動
 
 ### 1. 仮想環境のセットアップ
@@ -108,6 +147,11 @@ curl http://localhost:8000/health
 ├── requirements.txt       # 依存関係
 ├── requirements/
 │   └── flask.txt          # Flask版依存関係
+├── sample_server/         # 動作確認用サンプル
+│   ├── mock_chat_server.py  # 模擬チャットサーバー
+│   ├── test_demo.py         # 自動テストスクリプト
+│   ├── start_demo.sh        # 自動デモ起動スクリプト
+│   └── curl_examples.sh     # cURLサンプル
 └── tests/                 # テストファイル
     ├── test_app_flask.py
     ├── test_client.py
@@ -137,6 +181,33 @@ python -m pytest tests/test_app_flask.py -v
 | DEBUG | false | デバッグモード |
 | LOG_LEVEL | INFO | ログレベル |
 | DEFAULT_MODEL | gpt-3.5-turbo | デフォルトモデル名 |
+
+## サンプルサーバー
+
+動作確認のため、既存チャットサーバーを模擬するサンプルサーバーが含まれています。
+
+### 機能
+
+- **非ストリーミング・ストリーミング対応**: OpenAI Chat APIプロキシサーバーの両方のモードをテスト可能
+- **インテリジェントな応答**: ユーザーメッセージの内容に応じて適切な応答を生成
+- **エラーハンドリング**: 無効なリクエストに対する適切なエラー処理
+- **ヘルスチェック**: `/health`エンドポイントでサーバーの状態を確認
+
+### 使用方法
+
+```bash
+# 単独で起動
+python sample_server/mock_chat_server.py
+
+# 自動デモで起動（推奨）
+cd sample_server && ./start_demo.sh
+```
+
+### API エンドポイント
+
+- `POST /chat` - チャットエンドポイント
+- `GET /health` - ヘルスチェック
+- `GET /` - API情報表示
 
 ## エラーハンドリング
 
