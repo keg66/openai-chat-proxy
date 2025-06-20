@@ -16,6 +16,14 @@
 - `POST /v1/chat/completions` - OpenAI API互換のチャット完了エンドポイント
 - `GET /health` - ヘルスチェックエンドポイント
 
+### アダプターアーキテクチャ
+
+- **環境変数ベース設定**: 様々な既存サーバーに対応するため、フィールドマッピングを環境変数で設定可能
+- **ネストフィールド対応**: `response.choices[0].message.content` のような複雑な構造に対応
+- **複数ストリーミング形式**: Server-Sent Events、JSON Lines、カスタム形式をサポート
+- **カスタムヘッダー**: 認証やAPI キーなどのヘッダーを追加可能
+- **フィールド無効化**: 既存サーバーが対応していないパラメータは送信しないよう設定可能
+
 ### サポートパラメータ
 
 **必須**:
@@ -141,6 +149,12 @@ curl http://localhost:8000/health
 ├── config.py              # 設定管理
 ├── core/                  # 共通ビジネスロジック
 │   ├── __init__.py
+│   ├── adapter_config.py  # アダプター設定管理
+│   ├── adapters/          # アダプターアーキテクチャ
+│   │   ├── __init__.py
+│   │   ├── base.py        # ベースアダプタークラス
+│   │   ├── configurable.py # 設定可能アダプター
+│   │   └── factory.py     # アダプターファクトリー
 │   ├── client.py          # 既存サーバー通信クライアント
 │   ├── converter.py       # データ変換ロジック
 │   └── models.py          # データ構造定義
@@ -155,6 +169,8 @@ curl http://localhost:8000/health
 │   ├── test_mock_server.sh  # モックサーバー単体テスト
 │   └── quick_test.sh        # モックサーバークイックテスト
 └── tests/                 # テストファイル
+    ├── test_adapter_config.py  # アダプター設定テスト
+    ├── test_adapters.py         # アダプター機能テスト
     ├── test_app_flask.py
     ├── test_client.py
     ├── test_config.py
@@ -165,14 +181,119 @@ curl http://localhost:8000/health
 ## テスト実行
 
 ```bash
-# 全テスト実行
+# 全テスト実行（87テスト）
 python -m pytest tests/ -v
 
 # 特定のテストファイル実行
-python -m pytest tests/test_app_flask.py -v
+python -m pytest tests/test_app_flask.py -v      # Flask アプリケーション
+python -m pytest tests/test_adapters.py -v       # アダプター機能
+python -m pytest tests/test_adapter_config.py -v # アダプター設定
+
+# アダプター関連テストのみ実行
+python -m pytest tests/test_adapter*.py -v
+```
+
+## アダプター設定
+
+プロキシサーバーは、様々な既存サーバーの入出力形式に対応するため、アダプターアーキテクチャを採用しています。環境変数で簡単に設定できます。
+
+### 基本設定
+
+```bash
+# アダプタータイプ（通常は変更不要）
+export ADAPTER_TYPE="openai_compatible"
+
+# リクエストフィールドマッピング
+export REQUEST_MODEL_FIELD="model"          # モデル名フィールド
+export REQUEST_MESSAGES_FIELD="messages"    # メッセージ配列フィールド（必須）
+export REQUEST_TEMPERATURE_FIELD="temperature"  # 温度パラメータフィールド
+export REQUEST_MAX_TOKENS_FIELD="max_tokens"    # 最大トークン数フィールド
+export REQUEST_STREAM_FIELD="stream"            # ストリーミングフラグフィールド
+export REQUEST_STOP_FIELD="stop"                # 停止文字列フィールド
+
+# レスポンスフィールドマッピング
+export RESPONSE_CONTENT_FIELD="content"         # コンテンツフィールド（必須）
+export RESPONSE_FINISH_FIELD="finish_reason"    # 完了理由フィールド
+export RESPONSE_MODEL_FIELD="model"             # モデル名フィールド
+export RESPONSE_CREATED_FIELD="created"         # 作成時刻フィールド
+```
+
+### 高度な設定
+
+```bash
+# ストリーミング設定
+export STREAMING_FORMAT="sse"              # sse, jsonlines, none
+export STREAMING_DATA_PREFIX="data: "      # SSE用データプレフィックス
+export STREAMING_DONE_MARKER="[DONE]"      # 完了マーカー
+
+# カスタムヘッダー（JSON形式）
+export CUSTOM_HEADERS='{"Authorization": "Bearer your-token", "X-API-Key": "your-key"}'
+
+# デバッグ設定
+export ADAPTER_DEBUG="false"               # アダプターデバッグログの有効化
+```
+
+### カスタム既存サーバー対応例
+
+#### 例1: ネストしたレスポンス構造
+
+```bash
+# 既存サーバーが response.choices[0].message.content 形式でレスポンスを返す場合
+export RESPONSE_CONTENT_FIELD="response.choices[0].message.content"
+export RESPONSE_FINISH_FIELD="response.choices[0].finish_reason"
+```
+
+#### 例2: 異なるフィールド名
+
+```bash
+# 既存サーバーが独自のフィールド名を使用する場合
+export REQUEST_MODEL_FIELD="engine"         # model → engine
+export REQUEST_MESSAGES_FIELD="conversation" # messages → conversation
+export REQUEST_TEMPERATURE_FIELD="randomness" # temperature → randomness
+export RESPONSE_CONTENT_FIELD="response_text"  # content ← response_text
+export RESPONSE_FINISH_FIELD="status"          # finish_reason ← status
+```
+
+#### 例3: フィールドの無効化
+
+```bash
+# 既存サーバーが特定のフィールドをサポートしない場合
+export REQUEST_MAX_TOKENS_FIELD=""          # max_tokensを送信しない
+export REQUEST_STOP_FIELD=""                # stopを送信しない
+export RESPONSE_MODEL_FIELD=""              # モデル名をレスポンスから取得しない
+```
+
+#### 例4: JSON Lines ストリーミング
+
+```bash
+# Server-Sent Events以外のストリーミング形式を使用する場合
+export STREAMING_FORMAT="jsonlines"
+export STREAMING_DATA_PREFIX=""
+export STREAMING_DONE_MARKER=""
+```
+
+### アダプター設定の検証
+
+設定が正しく適用されているかを確認できます：
+
+```python
+from core.adapter_config import AdapterConfig
+
+# 設定情報の表示
+info = AdapterConfig.get_adapter_info()
+print(info)
+
+# 設定の妥当性チェック
+try:
+    AdapterConfig.validate()
+    print("✓ 設定は有効です")
+except Exception as e:
+    print(f"✗ 設定エラー: {e}")
 ```
 
 ## 設定可能な環境変数
+
+### サーバー設定
 
 | 環境変数 | デフォルト値 | 説明 |
 |----------|-------------|------|
@@ -183,6 +304,17 @@ python -m pytest tests/test_app_flask.py -v
 | DEBUG | false | デバッグモード |
 | LOG_LEVEL | INFO | ログレベル |
 | DEFAULT_MODEL | gpt-3.5-turbo | デフォルトモデル名 |
+
+### アダプター設定（詳細は上記参照）
+
+| 環境変数 | デフォルト値 | 説明 |
+|----------|-------------|------|
+| ADAPTER_TYPE | openai_compatible | アダプタータイプ |
+| REQUEST_MESSAGES_FIELD | messages | メッセージフィールド（必須） |
+| RESPONSE_CONTENT_FIELD | content | レスポンスコンテンツフィールド（必須） |
+| STREAMING_FORMAT | sse | ストリーミング形式 |
+| CUSTOM_HEADERS | {} | カスタムヘッダー（JSON） |
+| ADAPTER_DEBUG | false | アダプターデバッグログ |
 
 ## サンプルサーバー
 
