@@ -151,7 +151,9 @@ curl http://localhost:8000/health
 │   ├── mock_chat_server.py  # 模擬チャットサーバー
 │   ├── test_demo.py         # 自動テストスクリプト
 │   ├── start_demo.sh        # 自動デモ起動スクリプト
-│   └── curl_examples.sh     # cURLサンプル
+│   ├── curl_examples.sh     # プロキシサーバー用cURLサンプル
+│   ├── test_mock_server.sh  # モックサーバー単体テスト
+│   └── quick_test.sh        # モックサーバークイックテスト
 └── tests/                 # テストファイル
     ├── test_app_flask.py
     ├── test_client.py
@@ -201,6 +203,10 @@ python sample_server/mock_chat_server.py
 
 # 自動デモで起動（推奨）
 cd sample_server && ./start_demo.sh
+
+# モックサーバー単体テスト
+./sample_server/test_mock_server.sh    # 包括的テスト
+./sample_server/quick_test.sh          # クイックテスト
 ```
 
 ### API エンドポイント
