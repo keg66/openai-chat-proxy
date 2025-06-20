@@ -1,22 +1,37 @@
 """
 データ変換ロジック
 OpenAI形式と既存サーバー形式の間でデータを変換
+アダプター機能を使用して様々な既存サーバーに対応
 """
 import json
-from typing import Dict, Any, Generator, List
+from typing import Dict, Any, Generator, List, Optional
 from .models import (
     ChatCompletionRequest, ChatCompletionResponse, ChatCompletionChoice,
     ChatCompletionChunk, ChatCompletionChunkChoice, ChatCompletionChunkDelta,
     ChatCompletionUsage, ChatMessage, ExistingServerRequest, ExistingServerResponse
 )
+from .adapters.factory import get_default_adapter
+from .adapters.base import BaseAdapter
 
 
 class DataConverter:
-    """データ変換クラス"""
+    """データ変換クラス（アダプター機能付き）"""
     
-    @staticmethod
-    def openai_to_existing_server(request: ChatCompletionRequest) -> ExistingServerRequest:
+    def __init__(self, adapter: Optional[BaseAdapter] = None):
+        """
+        Args:
+            adapter: 使用するアダプター（Noneの場合はデフォルトアダプターを使用）
+        """
+        self.adapter = adapter or get_default_adapter()
+    
+    def openai_to_existing_server(self, request: ChatCompletionRequest) -> Dict[str, Any]:
         """OpenAI形式のリクエストを既存サーバー形式に変換"""
+        return self.adapter.transform_request(request)
+    
+    # 後方互換性のための静的メソッド（廃止予定）
+    @staticmethod
+    def openai_to_existing_server_legacy(request: ChatCompletionRequest) -> ExistingServerRequest:
+        """OpenAI形式のリクエストを既存サーバー形式に変換（レガシー）"""
         messages = []
         for msg in request.messages:
             messages.append({
@@ -32,8 +47,21 @@ class DataConverter:
             stream=request.stream
         )
     
-    @staticmethod
     def existing_server_to_openai(
+        self,
+        server_response: Dict[str, Any],
+        original_request: ChatCompletionRequest
+    ) -> ChatCompletionResponse:
+        """既存サーバーのレスポンスをOpenAI形式に変換"""
+        # アダプターでまず変換
+        adapter_response = self.adapter.transform_response(server_response, original_request)
+        
+        # OpenAI形式に変換
+        return self._create_openai_response(adapter_response, original_request)
+    
+    # 後方互換性のための静的メソッド（廃止予定）
+    @staticmethod
+    def existing_server_to_openai_legacy(
         server_response: ExistingServerResponse,
         original_request: ChatCompletionRequest
     ) -> ChatCompletionResponse:
@@ -62,6 +90,45 @@ class DataConverter:
             choices=[choice],
             usage=usage
         )
+    
+    def _create_openai_response(
+        self,
+        adapter_response: ExistingServerResponse,
+        original_request: ChatCompletionRequest
+    ) -> ChatCompletionResponse:
+        """アダプターレスポンスからOpenAI形式レスポンスを作成"""
+        choice = ChatCompletionChoice(
+            index=0,
+            message=ChatMessage(
+                role="assistant",
+                content=adapter_response.content
+            ),
+            finish_reason=adapter_response.finish_reason or "stop"
+        )
+        
+        # 簡易的なトークン数計算
+        prompt_tokens = self._estimate_tokens(original_request.messages)
+        completion_tokens = self._estimate_tokens([ChatMessage(role="assistant", content=adapter_response.content)])
+        
+        usage = ChatCompletionUsage(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            total_tokens=prompt_tokens + completion_tokens
+        )
+        
+        return ChatCompletionResponse(
+            model=original_request.model,
+            choices=[choice],
+            usage=usage
+        )
+    
+    def parse_streaming_chunk(self, chunk_line: str) -> Optional[Dict[str, Any]]:
+        """ストリーミングチャンクを解析（アダプター使用）"""
+        return self.adapter.parse_streaming_chunk(chunk_line)
+    
+    def get_custom_headers(self) -> Dict[str, str]:
+        """カスタムヘッダーを取得（アダプター使用）"""
+        return self.adapter.get_custom_headers()
     
     @staticmethod
     def create_streaming_chunk(
@@ -92,6 +159,12 @@ class DataConverter:
         
         return chunk
     
+    def _estimate_tokens(self, messages: List[ChatMessage]) -> int:
+        """トークン数を概算"""
+        total_chars = sum(len(msg.content) + len(msg.role) for msg in messages)
+        return max(1, total_chars // 3)
+    
+    # レガシー静的メソッド群（後方互換性のため）
     @staticmethod
     def parse_sse_line(line: str) -> Dict[str, Any]:
         """Server-Sent Eventsの行を解析"""

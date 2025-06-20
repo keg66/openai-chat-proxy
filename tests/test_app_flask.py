@@ -120,15 +120,15 @@ class TestFlaskApp:
         data = json.loads(response.data)
         assert 'Messages must be a non-empty array' in data['error']['message']
     
-    @patch('app_flask.existing_client.send_request')
-    def test_chat_completions_non_streaming_success(self, mock_send_request):
+    @patch('app_flask.existing_client.send_request_dict')
+    def test_chat_completions_non_streaming_success(self, mock_send_request_dict):
         """非ストリーミング成功のテスト"""
-        # モックレスポンスの設定
-        mock_response = ExistingServerResponse(
-            content="Hello! How can I help you today?",
-            finish_reason="stop"
-        )
-        mock_send_request.return_value = mock_response
+        # モックレスポンスの設定（新しい形式では辞書）
+        mock_response = {
+            "content": "Hello! How can I help you today?",
+            "finish_reason": "stop"
+        }
+        mock_send_request_dict.return_value = mock_response
         
         request_data = {
             "model": "gpt-3.5-turbo",
@@ -151,11 +151,11 @@ class TestFlaskApp:
         assert 'usage' in data
         assert data['usage']['total_tokens'] > 0
     
-    @patch('app_flask.existing_client.send_request')
-    def test_chat_completions_connection_error(self, mock_send_request):
+    @patch('app_flask.existing_client.send_request_dict')
+    def test_chat_completions_connection_error(self, mock_send_request_dict):
         """接続エラーのテスト"""
         from requests.exceptions import ConnectionError
-        mock_send_request.side_effect = ConnectionError("Connection failed")
+        mock_send_request_dict.side_effect = ConnectionError("Connection failed")
         
         request_data = {
             "model": "gpt-3.5-turbo",
@@ -168,11 +168,11 @@ class TestFlaskApp:
         data = json.loads(response.data)
         assert data['error']['type'] == 'service_unavailable'
     
-    @patch('app_flask.existing_client.send_request')
-    def test_chat_completions_timeout_error(self, mock_send_request):
+    @patch('app_flask.existing_client.send_request_dict')
+    def test_chat_completions_timeout_error(self, mock_send_request_dict):
         """タイムアウトエラーのテスト"""
         from requests.exceptions import Timeout
-        mock_send_request.side_effect = Timeout("Request timed out")
+        mock_send_request_dict.side_effect = Timeout("Request timed out")
         
         request_data = {
             "model": "gpt-3.5-turbo",
@@ -185,8 +185,8 @@ class TestFlaskApp:
         data = json.loads(response.data)
         assert data['error']['type'] == 'timeout'
     
-    @patch('app_flask.existing_client.send_streaming_request')
-    def test_chat_completions_streaming_success(self, mock_send_streaming_request):
+    @patch('app_flask.existing_client.send_streaming_request_dict')
+    def test_chat_completions_streaming_success(self, mock_send_streaming_request_dict):
         """ストリーミング成功のテスト"""
         # モックストリーミングデータ
         streaming_data = [
@@ -194,7 +194,7 @@ class TestFlaskApp:
             {"content": " there", "finish_reason": None},
             {"content": "!", "finish_reason": "stop"}
         ]
-        mock_send_streaming_request.return_value = iter(streaming_data)
+        mock_send_streaming_request_dict.return_value = iter(streaming_data)
         
         request_data = {
             "model": "gpt-3.5-turbo",
@@ -220,15 +220,15 @@ class TestFlaskApp:
         data = json.loads(response.data)
         assert data['error']['type'] == 'not_found_error'
     
-    @patch('app_flask.existing_client.send_request')
-    def test_invalid_request_format(self, mock_send_request):
+    @patch('app_flask.existing_client.send_request_dict')
+    def test_invalid_request_format(self, mock_send_request_dict):
         """無効なリクエスト形式のテスト"""
-        # モックレスポンスの設定
-        mock_response = ExistingServerResponse(
-            content="Hello! This is a valid response.",
-            finish_reason="stop"
-        )
-        mock_send_request.return_value = mock_response
+        # モックレスポンスの設定（新しい形式では辞書）
+        mock_response = {
+            "content": "Hello! This is a valid response.",
+            "finish_reason": "stop"
+        }
+        mock_send_request_dict.return_value = mock_response
         
         request_data = {
             "model": "gpt-3.5-turbo",

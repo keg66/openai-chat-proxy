@@ -13,6 +13,10 @@ from core.models import (
 class TestDataConverter:
     """DataConverterのテスト"""
     
+    def setup_method(self):
+        """テストセットアップ"""
+        self.converter = DataConverter()
+    
     def test_openai_to_existing_server(self):
         """OpenAI形式から既存サーバー形式への変換テスト"""
         # テストデータ作成
@@ -28,26 +32,26 @@ class TestDataConverter:
         }
         
         openai_request = ChatCompletionRequest.from_dict(request_data)
-        existing_request = DataConverter.openai_to_existing_server(openai_request)
+        existing_request = self.converter.openai_to_existing_server(openai_request)
         
-        # 変換結果の検証
-        assert existing_request.model == "gpt-3.5-turbo"
-        assert len(existing_request.messages) == 2
-        assert existing_request.messages[0]["role"] == "system"
-        assert existing_request.messages[0]["content"] == "You are helpful"
-        assert existing_request.messages[1]["role"] == "user"
-        assert existing_request.messages[1]["content"] == "Hello"
-        assert existing_request.temperature == 0.7
-        assert existing_request.max_tokens == 100
-        assert existing_request.stream is True
+        # 変換結果の検証（新しい形式では辞書が返される）
+        assert existing_request["model"] == "gpt-3.5-turbo"
+        assert len(existing_request["messages"]) == 2
+        assert existing_request["messages"][0]["role"] == "system"
+        assert existing_request["messages"][0]["content"] == "You are helpful"
+        assert existing_request["messages"][1]["role"] == "user"
+        assert existing_request["messages"][1]["content"] == "Hello"
+        assert existing_request["temperature"] == 0.7
+        assert existing_request["max_tokens"] == 100
+        assert existing_request["stream"] is True
     
     def test_existing_server_to_openai(self):
         """既存サーバー形式からOpenAI形式への変換テスト"""
-        # テストデータ作成
-        server_response = ExistingServerResponse(
-            content="Hello, how can I help you?",
-            finish_reason="stop"
-        )
+        # テストデータ作成（新しい形式では辞書形式）
+        server_response = {
+            "content": "Hello, how can I help you?",
+            "finish_reason": "stop"
+        }
         
         original_request = ChatCompletionRequest(
             model="gpt-3.5-turbo",
@@ -57,7 +61,7 @@ class TestDataConverter:
         )
         
         # 変換実行
-        openai_response = DataConverter.existing_server_to_openai(
+        openai_response = self.converter.existing_server_to_openai(
             server_response, original_request
         )
         

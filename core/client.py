@@ -1,5 +1,5 @@
 """
-既存サーバー通信クライアント
+既存サーバー通信クライアント（アダプター機能付き）
 """
 import requests
 import json
@@ -8,21 +8,84 @@ from typing import Dict, Any, Generator, Optional
 from requests.exceptions import RequestException, Timeout, ConnectionError
 from .models import ExistingServerRequest, ExistingServerResponse
 from .converter import DataConverter
+from .adapters.base import BaseAdapter
+from .adapters.factory import get_default_adapter
 
 
 class ExistingServerClient:
-    """既存サーバーとの通信を行うクライアント"""
+    """既存サーバーとの通信を行うクライアント（アダプター機能付き）"""
     
-    def __init__(self, server_url: str, timeout: int = 30):
+    def __init__(self, server_url: str, timeout: int = 30, adapter: Optional[BaseAdapter] = None):
         """
         Args:
             server_url: 既存サーバーのURL
             timeout: リクエストタイムアウト（秒）
+            adapter: 使用するアダプター（Noneの場合はデフォルトアダプターを使用）
         """
         self.server_url = server_url
         self.timeout = timeout
+        self.adapter = adapter or get_default_adapter()
         self.logger = logging.getLogger(__name__)
+        
+        # データコンバーターもアダプター付きで初期化
+        self.converter = DataConverter(self.adapter)
     
+    def send_request_dict(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        既存サーバーに辞書形式のリクエストを送信
+        
+        Args:
+            request_data: 送信するリクエストデータ
+            
+        Returns:
+            Dict: サーバーからのレスポンス
+        """
+        try:
+            self.logger.debug(f"Sending request to {self.server_url}")
+            self.logger.debug(f"Request data: {request_data}")
+            
+            # カスタムヘッダーを取得
+            headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            }
+            headers.update(self.converter.get_custom_headers())
+            
+            response = requests.post(
+                self.server_url,
+                json=request_data,
+                timeout=self.timeout,
+                headers=headers
+            )
+            
+            response.raise_for_status()
+            
+            response_data = response.json()
+            self.logger.debug(f"Response data: {response_data}")
+            
+            return response_data
+            
+        except ConnectionError as e:
+            self.logger.error(f"Connection error: {e}")
+            raise ConnectionError(f"Failed to connect to existing server: {e}")
+        
+        except Timeout as e:
+            self.logger.error(f"Request timeout: {e}")
+            raise Timeout(f"Request to existing server timed out after {self.timeout} seconds")
+        
+        except requests.HTTPError as e:
+            self.logger.error(f"HTTP error: {e}")
+            raise RequestException(f"HTTP error from existing server: {e}")
+        
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON decode error: {e}")
+            raise RequestException(f"Invalid JSON response from existing server: {e}")
+        
+        except Exception as e:
+            self.logger.error(f"Unexpected error: {e}")
+            raise RequestException(f"Unexpected error: {e}")
+    
+    # 後方互換性のためのメソッド
     def send_request(self, request: ExistingServerRequest) -> ExistingServerResponse:
         """
         既存サーバーに非ストリーミングリクエストを送信
@@ -79,6 +142,67 @@ class ExistingServerClient:
             self.logger.error(f"Unexpected error: {e}")
             raise RequestException(f"Unexpected error: {e}")
     
+    def send_streaming_request_dict(self, request_data: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
+        """
+        既存サーバーに辞書形式のストリーミングリクエストを送信
+        
+        Args:
+            request_data: 送信するリクエストデータ
+            
+        Yields:
+            Dict: サーバーからのストリーミングレスポンス
+        """
+        try:
+            self.logger.debug(f"Sending streaming request to {self.server_url}")
+            self.logger.debug(f"Request data: {request_data}")
+            
+            # カスタムヘッダーを取得
+            headers = {
+                'Content-Type': 'application/json',
+                'Accept': 'text/event-stream'
+            }
+            headers.update(self.converter.get_custom_headers())
+            
+            response = requests.post(
+                self.server_url,
+                json=request_data,
+                timeout=self.timeout,
+                stream=True,
+                headers=headers
+            )
+            
+            response.raise_for_status()
+            
+            # ストリーミングレスポンスを処理
+            for line in response.iter_lines(decode_unicode=True):
+                if line:
+                    parsed_line = self.converter.parse_streaming_chunk(line)
+                    
+                    if parsed_line and parsed_line.get("type") == "data":
+                        yield parsed_line["data"]
+                    elif parsed_line and parsed_line.get("type") == "done":
+                        break
+                    elif parsed_line and parsed_line.get("type") == "error":
+                        self.logger.error(f"Streaming parsing error: {parsed_line['error']}")
+                        raise RequestException(f"Streaming parsing error: {parsed_line['error']}")
+                        
+        except ConnectionError as e:
+            self.logger.error(f"Connection error: {e}")
+            raise ConnectionError(f"Failed to connect to existing server: {e}")
+        
+        except Timeout as e:
+            self.logger.error(f"Request timeout: {e}")
+            raise Timeout(f"Streaming request to existing server timed out after {self.timeout} seconds")
+        
+        except requests.HTTPError as e:
+            self.logger.error(f"HTTP error: {e}")
+            raise RequestException(f"HTTP error from existing server: {e}")
+        
+        except Exception as e:
+            self.logger.error(f"Unexpected error: {e}")
+            raise RequestException(f"Unexpected error in streaming request: {e}")
+    
+    # 後方互換性のためのメソッド
     def send_streaming_request(self, request: ExistingServerRequest) -> Generator[Dict[str, Any], None, None]:
         """
         既存サーバーにストリーミングリクエストを送信

@@ -28,6 +28,9 @@ existing_client = ExistingServerClient(
     timeout=Config.REQUEST_TIMEOUT()
 )
 
+# データコンバーターの初期化
+converter = DataConverter()
+
 
 @app.route('/health', methods=['GET'])
 def health_check():
@@ -107,7 +110,7 @@ def chat_completions():
         logger.info(f"Processing request: model={openai_request.model}, stream={openai_request.stream}, messages_count={len(openai_request.messages)}")
         
         # 既存サーバー形式に変換
-        existing_request = DataConverter.openai_to_existing_server(openai_request)
+        existing_request = converter.openai_to_existing_server(openai_request)
         
         # ストリーミングの場合
         if openai_request.stream:
@@ -128,10 +131,10 @@ def handle_non_streaming_request(existing_request, openai_request):
     """非ストリーミングリクエストを処理"""
     try:
         # 既存サーバーにリクエスト送信
-        server_response = existing_client.send_request(existing_request)
+        server_response = existing_client.send_request_dict(existing_request)
         
         # OpenAI形式に変換
-        openai_response = DataConverter.existing_server_to_openai(server_response, openai_request)
+        openai_response = converter.existing_server_to_openai(server_response, openai_request)
         
         # レスポンスを辞書に変換
         response_dict = {
@@ -197,7 +200,7 @@ def handle_streaming_request(existing_request, openai_request):
             yield DataConverter.format_sse_chunk(start_chunk)
             
             # 既存サーバーからのストリーミングレスポンスを処理
-            for server_data in existing_client.send_streaming_request(existing_request):
+            for server_data in existing_client.send_streaming_request_dict(existing_request):
                 # サーバーデータをチャンクに変換
                 content = server_data.get("content", "")
                 finish_reason = server_data.get("finish_reason")
