@@ -1,6 +1,6 @@
 """
-ベースアダプタークラス
-異なる既存サーバーとの互換性を提供するための基底クラス
+Base adapter class
+Base class for providing compatibility with different existing servers
 """
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Generator, Optional
@@ -10,12 +10,12 @@ from ..models import ChatCompletionRequest, ExistingServerRequest, ExistingServe
 
 
 class BaseAdapter(ABC):
-    """アダプターのベースクラス"""
+    """Base class for adapters"""
     
     def __init__(self, config):
         """
         Args:
-            config: アダプター設定オブジェクト
+            config: Adapter configuration object
         """
         self.config = config
         self.logger = logging.getLogger(self.__class__.__name__)
@@ -26,62 +26,62 @@ class BaseAdapter(ABC):
     @abstractmethod
     def transform_request(self, openai_request: ChatCompletionRequest) -> Dict[str, Any]:
         """
-        OpenAI形式のリクエストを既存サーバー形式に変換
+        Transform OpenAI format request to existing server format
         
         Args:
-            openai_request: OpenAI形式のリクエスト
+            openai_request: OpenAI format request
             
         Returns:
-            Dict: 既存サーバー用のリクエストデータ
+            Dict: Request data for existing server
         """
         pass
     
     @abstractmethod
     def transform_response(self, server_response: Dict[str, Any], original_request: ChatCompletionRequest) -> ExistingServerResponse:
         """
-        既存サーバーのレスポンスをプロキシ用形式に変換
+        Transform existing server response to proxy format
         
         Args:
-            server_response: 既存サーバーからのレスポンス
-            original_request: 元のOpenAIリクエスト
+            server_response: Response from existing server
+            original_request: Original OpenAI request
             
         Returns:
-            ExistingServerResponse: プロキシ用レスポンス
+            ExistingServerResponse: Proxy format response
         """
         pass
     
     @abstractmethod
     def parse_streaming_chunk(self, chunk_line: str) -> Optional[Dict[str, Any]]:
         """
-        ストリーミングレスポンスのチャンクを解析
+        Parse streaming response chunk
         
         Args:
-            chunk_line: ストリーミングデータの1行
+            chunk_line: One line of streaming data
             
         Returns:
-            Dict: 解析されたチャンクデータ、解析できない場合はNone
+            Dict: Parsed chunk data, None if cannot parse
         """
         pass
     
     @abstractmethod
     def get_custom_headers(self) -> Dict[str, str]:
         """
-        カスタムヘッダーを取得
+        Get custom headers
         
         Returns:
-            Dict: カスタムヘッダー辞書
+            Dict: Custom header dictionary
         """
         pass
     
     def log_request_transform(self, openai_request: ChatCompletionRequest, transformed_request: Dict[str, Any]) -> None:
-        """リクエスト変換をログ出力（デバッグ用）"""
+        """Log request transformation (for debugging)"""
         if self.config.ADAPTER_DEBUG:
             self.logger.debug("Request transformation:")
             self.logger.debug(f"  Original: model={openai_request.model}, messages_count={len(openai_request.messages)}, stream={openai_request.stream}")
             self.logger.debug(f"  Transformed: {transformed_request}")
     
     def log_response_transform(self, server_response: Dict[str, Any], transformed_response: ExistingServerResponse) -> None:
-        """レスポンス変換をログ出力（デバッグ用）"""
+        """Log response transformation (for debugging)"""
         if self.config.ADAPTER_DEBUG:
             self.logger.debug("Response transformation:")
             self.logger.debug(f"  Server response keys: {list(server_response.keys())}")
@@ -89,15 +89,15 @@ class BaseAdapter(ABC):
 
 
 class AdapterError(Exception):
-    """アダプター関連のエラー"""
+    """Adapter-related error"""
     pass
 
 
 class UnsupportedFormatError(AdapterError):
-    """サポートされていない形式エラー"""
+    """Unsupported format error"""
     pass
 
 
 class MappingError(AdapterError):
-    """フィールドマッピングエラー"""
+    """Field mapping error"""
     pass

@@ -1,6 +1,6 @@
 """
-設定可能なアダプター
-環境変数による設定でさまざまな既存サーバーに対応
+Configurable adapter
+Supports various existing servers through environment variable configuration
 """
 import json
 from typing import Dict, Any, Optional, List
@@ -10,37 +10,37 @@ from ..models import ChatCompletionRequest, ExistingServerResponse, ChatMessage
 
 
 class ConfigurableAdapter(BaseAdapter):
-    """設定可能なアダプター"""
+    """Configurable adapter"""
     
     def transform_request(self, openai_request: ChatCompletionRequest) -> Dict[str, Any]:
-        """OpenAI形式のリクエストを既存サーバー形式に変換"""
+        """Convert OpenAI format request to existing server format"""
         request_data = {}
         
         try:
-            # メッセージフィールド（必須）
+            # Message field (required)
             if self.config.REQUEST_MESSAGES_FIELD():
                 messages = self._transform_messages(openai_request.messages)
                 set_nested_value(request_data, self.config.REQUEST_MESSAGES_FIELD(), messages)
             else:
                 raise MappingError("REQUEST_MESSAGES_FIELD is required")
             
-            # モデルフィールド（オプション）
+            # Model field (optional)
             if self.config.REQUEST_MODEL_FIELD() and openai_request.model:
                 set_nested_value(request_data, self.config.REQUEST_MODEL_FIELD(), openai_request.model)
             
-            # 温度設定（オプション、デフォルト値以外の場合のみ）
+            # Temperature setting (optional, only if not default value)
             if self.config.REQUEST_TEMPERATURE_FIELD() and openai_request.temperature != 1.0:
                 set_nested_value(request_data, self.config.REQUEST_TEMPERATURE_FIELD(), openai_request.temperature)
             
-            # 最大トークン数（オプション）
+            # Maximum token count (optional)
             if self.config.REQUEST_MAX_TOKENS_FIELD() and openai_request.max_tokens:
                 set_nested_value(request_data, self.config.REQUEST_MAX_TOKENS_FIELD(), openai_request.max_tokens)
             
-            # ストリーミング設定（オプション）
+            # Streaming setting (optional)
             if self.config.REQUEST_STREAM_FIELD() and openai_request.stream:
                 set_nested_value(request_data, self.config.REQUEST_STREAM_FIELD(), openai_request.stream)
             
-            # 停止文字列（オプション）
+            # Stop strings (optional)
             if self.config.REQUEST_STOP_FIELD() and openai_request.stop:
                 set_nested_value(request_data, self.config.REQUEST_STOP_FIELD(), openai_request.stop)
             
@@ -51,7 +51,7 @@ class ConfigurableAdapter(BaseAdapter):
             raise MappingError(f"Failed to transform request: {str(e)}")
     
     def transform_response(self, server_response: Dict[str, Any], original_request: ChatCompletionRequest) -> ExistingServerResponse:
-        """既存サーバーのレスポンスをプロキシ用形式に変換"""
+        """Convert existing server response to proxy format"""
         try:
             # コンテンツフィールド（必須）
             content = get_nested_value(server_response, self.config.RESPONSE_CONTENT_FIELD())
@@ -70,7 +70,7 @@ class ConfigurableAdapter(BaseAdapter):
             if finish_reason is None and (not hasattr(original_request, 'stream') or not original_request.stream):
                 finish_reason = "stop"
             
-            # モデルフィールド（オプション）
+            # Model field (optional)
             model = original_request.model  # デフォルトは元のリクエストのモデル
             if self.config.RESPONSE_MODEL_FIELD():
                 server_model = get_nested_value(server_response, self.config.RESPONSE_MODEL_FIELD())

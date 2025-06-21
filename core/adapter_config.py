@@ -1,6 +1,6 @@
 """
-アダプター設定管理
-既存サーバーとの互換性のための設定を管理
+Adapter configuration management
+Manages configuration for compatibility with existing servers
 """
 import os
 import json
@@ -9,7 +9,7 @@ from typing import Dict, Any, Optional
 
 
 class AdapterConfig:
-    """アダプター設定クラス"""
+    """Adapter configuration class"""
     
     @staticmethod
     def ADAPTER_TYPE() -> str:
@@ -88,24 +88,24 @@ class AdapterConfig:
     
     @classmethod
     def validate(cls) -> None:
-        """設定の妥当性をチェック"""
+        """Validate configuration"""
         logger = logging.getLogger(__name__)
         
-        # 必須フィールドのチェック
+        # Check required fields
         if not cls.REQUEST_MESSAGES_FIELD():
             raise ValueError("REQUEST_MESSAGES_FIELD is required")
         
         if not cls.RESPONSE_CONTENT_FIELD():
             raise ValueError("RESPONSE_CONTENT_FIELD is required")
         
-        # ストリーミング設定の整合性チェック
+        # Check streaming configuration consistency
         if cls.STREAMING_FORMAT() not in ["sse", "jsonlines", "none"]:
             raise ValueError(f"Invalid STREAMING_FORMAT: {cls.STREAMING_FORMAT()}")
         
         if cls.STREAMING_FORMAT() != "none" and not cls.REQUEST_STREAM_FIELD():
             logger.warning("Streaming format specified but REQUEST_STREAM_FIELD is empty")
         
-        # カスタムヘッダーの検証
+        # Validate custom headers
         try:
             custom_headers_str = os.getenv("CUSTOM_HEADERS", "{}")
             json.loads(custom_headers_str)
@@ -116,7 +116,7 @@ class AdapterConfig:
     
     @classmethod
     def get_adapter_info(cls) -> Dict[str, Any]:
-        """アダプター設定情報を取得"""
+        """Get adapter configuration information"""
         return {
             "adapter_type": cls.ADAPTER_TYPE(),
             "request_mapping": {
@@ -148,7 +148,7 @@ class AdapterConfig:
     
     @classmethod
     def log_configuration(cls) -> None:
-        """使用中のアダプター設定をログ出力"""
+        """Log current adapter configuration"""
         logger = logging.getLogger(__name__)
         
         logger.info("=== Adapter Configuration ===")
@@ -208,14 +208,14 @@ class AdapterConfig:
 
 def get_nested_value(data: Dict[str, Any], field_path: str) -> Any:
     """
-    ネストしたフィールドパスから値を取得
+    Get value from nested field path
     
     Args:
-        data: データ辞書
-        field_path: フィールドパス（例: "response.choices[0].message.content"）
+        data: Data dictionary
+        field_path: Field path (e.g., "response.choices[0].message.content")
     
     Returns:
-        取得した値、存在しない場合はNone
+        Retrieved value, None if not found
     """
     if not field_path or not data:
         return None
@@ -225,7 +225,7 @@ def get_nested_value(data: Dict[str, Any], field_path: str) -> Any:
         value = data
         
         for key in keys:
-            # 配列インデックスの処理 (例: choices[0])
+            # Handle array indices (e.g., choices[0])
             if '[' in key and ']' in key:
                 field_name = key[:key.index('[')]
                 index = int(key[key.index('[') + 1:key.index(']')])
@@ -240,12 +240,12 @@ def get_nested_value(data: Dict[str, Any], field_path: str) -> Any:
 
 def set_nested_value(data: Dict[str, Any], field_path: str, value: Any) -> None:
     """
-    ネストしたフィールドパスに値を設定
+    Set value to nested field path
     
     Args:
-        data: データ辞書
-        field_path: フィールドパス
-        value: 設定する値
+        data: Data dictionary
+        field_path: Field path
+        value: Value to set
     """
     if not field_path:
         return
@@ -253,12 +253,12 @@ def set_nested_value(data: Dict[str, Any], field_path: str, value: Any) -> None:
     keys = field_path.split('.')
     current = data
     
-    # 最後のキーまでの階層を作成
+    # Create hierarchy up to the last key
     for key in keys[:-1]:
         if key not in current:
             current[key] = {}
         current = current[key]
     
-    # 最後のキーに値を設定
+    # Set value to the last key
     last_key = keys[-1]
     current[last_key] = value
