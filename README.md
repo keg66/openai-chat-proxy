@@ -1,83 +1,83 @@
-# OpenAI Chat API プロキシサーバー
+# OpenAI Chat API Proxy Server
 
-既存のチャットサーバーをOpenAI API `/v1/chat/completions` 互換のインターフェースでラップするプロキシサーバーです。
+A proxy server that wraps existing chat servers with an OpenAI API `/v1/chat/completions` compatible interface.
 
-## プロジェクト概要
+## Project Overview
 
-- **目的**: 既存のチャットサーバー（HTTPでJSONリクエストをPOST、Server-Sent Events形式でJSONレスポンスを返却）をOpenAI API互換にする
-- **利用者**: 1人での利用を想定（多数の同時接続は不要）
-- **開発言語**: Python 3.11+
-- **フレームワーク**: Flask（Phase 1）
+- **Purpose**: Make existing chat servers (POST JSON requests via HTTP, return JSON responses in Server-Sent Events format) compatible with OpenAI API
+- **Target Users**: Single-user usage (no need for multiple concurrent connections)
+- **Language**: Python 3.11+
+- **Framework**: Flask (Phase 1)
 
-## 機能
+## Features
 
-### 対応エンドポイント
+### Supported Endpoints
 
-- `POST /v1/chat/completions` - OpenAI API互換のチャット完了エンドポイント
-- `GET /health` - ヘルスチェックエンドポイント
+- `POST /v1/chat/completions` - OpenAI API compatible chat completion endpoint
+- `GET /health` - Health check endpoint
 
-### アダプターアーキテクチャ
+### Adapter Architecture
 
-- **環境変数ベース設定**: 様々な既存サーバーに対応するため、フィールドマッピングを環境変数で設定可能
-- **ネストフィールド対応**: `response.choices[0].message.content` のような複雑な構造に対応
-- **複数ストリーミング形式**: Server-Sent Events、JSON Lines、カスタム形式をサポート
-- **カスタムヘッダー**: 認証やAPI キーなどのヘッダーを追加可能
-- **フィールド無効化**: 既存サーバーが対応していないパラメータは送信しないよう設定可能
+- **Environment Variable Configuration**: Field mapping configurable via environment variables to support various existing servers
+- **Nested Field Support**: Supports complex structures like `response.choices[0].message.content`
+- **Multiple Streaming Formats**: Supports Server-Sent Events, JSON Lines, and custom formats
+- **Custom Headers**: Add authentication or API key headers
+- **Field Deactivation**: Configure to not send parameters unsupported by existing servers
 
-### サポートパラメータ
+### Supported Parameters
 
-**必須**:
-- `model`: モデル名
-- `messages`: メッセージ配列（role, content）
+**Required**:
+- `model`: Model name
+- `messages`: Message array (role, content)
 
-**オプション**:
-- `temperature`: 温度パラメータ（デフォルト: 1.0）
-- `max_tokens`: 最大トークン数
-- `stream`: ストリーミング有効/無効（デフォルト: false）
-- `stop`: 停止文字列
+**Optional**:
+- `temperature`: Temperature parameter (default: 1.0)
+- `max_tokens`: Maximum token count
+- `stream`: Enable/disable streaming (default: false)
+- `stop`: Stop strings
 
-## クイックスタート
+## Quick Start
 
-### 簡単な動作確認
+### Simple Operation Test
 
-付属のモックサーバーを使って、すぐにプロキシサーバーをテストできます：
+Test the proxy server immediately using the included mock server:
 
 ```bash
-# 1. 仮想環境のセットアップ
+# 1. Virtual environment setup
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
 
-# 2. 自動デモの実行
+# 2. Run automated demo
 cd sample_server
 ./start_demo.sh
 ```
 
-これにより、モックサーバーとプロキシサーバーが自動で起動し、包括的なテストが実行されます。
+This automatically starts the mock server and proxy server, then runs comprehensive tests.
 
-### 手動テスト
+### Manual Testing
 
-個別にサーバーを起動してテストする場合：
+To start servers individually for testing:
 
 ```bash
-# ターミナル1: モックサーバーを起動
+# Terminal 1: Start mock server
 source venv/bin/activate
 python sample_server/mock_chat_server.py
 
-# ターミナル2: プロキシサーバーを起動  
+# Terminal 2: Start proxy server  
 source venv/bin/activate
 python app_flask.py
 
-# ターミナル3: テストを実行
+# Terminal 3: Run tests
 source venv/bin/activate
 python sample_server/test_demo.py
-# または
+# or
 ./sample_server/curl_examples.sh
 ```
 
-## インストールと起動
+## Installation and Setup
 
-### 1. 仮想環境のセットアップ
+### 1. Virtual Environment Setup
 
 ```bash
 python3 -m venv venv
@@ -85,7 +85,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-### 2. 環境変数の設定（オプション）
+### 2. Environment Variable Configuration (Optional)
 
 ```bash
 export EXISTING_SERVER_URL="http://your-chat-server.com/chat"
@@ -97,17 +97,17 @@ export LOG_LEVEL="INFO"
 export DEFAULT_MODEL="gpt-3.5-turbo"
 ```
 
-### 3. アプリケーションの起動
+### 3. Application Startup
 
 ```bash
 python app_flask.py
 ```
 
-サーバーは `http://localhost:8000` で起動します。
+The server starts at `http://localhost:8000`.
 
-## 使用例
+## Usage Examples
 
-### 非ストリーミングチャット
+### Non-streaming Chat
 
 ```bash
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -121,7 +121,7 @@ curl -X POST http://localhost:8000/v1/chat/completions \
   }'
 ```
 
-### ストリーミングチャット
+### Streaming Chat
 
 ```bash
 curl -X POST http://localhost:8000/v1/chat/completions \
@@ -135,42 +135,42 @@ curl -X POST http://localhost:8000/v1/chat/completions \
   }'
 ```
 
-### ヘルスチェック
+### Health Check
 
 ```bash
 curl http://localhost:8000/health
 ```
 
-## プロジェクト構造
+## Project Structure
 
 ```
 .
-├── app_flask.py           # Flask版メインアプリケーション
-├── config.py              # 設定管理
-├── core/                  # 共通ビジネスロジック
+├── app_flask.py           # Flask main application
+├── config.py              # Configuration management
+├── core/                  # Common business logic
 │   ├── __init__.py
-│   ├── adapter_config.py  # アダプター設定管理
-│   ├── adapters/          # アダプターアーキテクチャ
+│   ├── adapter_config.py  # Adapter configuration management
+│   ├── adapters/          # Adapter architecture
 │   │   ├── __init__.py
-│   │   ├── base.py        # ベースアダプタークラス
-│   │   ├── configurable.py # 設定可能アダプター
-│   │   └── factory.py     # アダプターファクトリー
-│   ├── client.py          # 既存サーバー通信クライアント
-│   ├── converter.py       # データ変換ロジック
-│   └── models.py          # データ構造定義
-├── requirements.txt       # 依存関係
+│   │   ├── base.py        # Base adapter class
+│   │   ├── configurable.py # Configurable adapter
+│   │   └── factory.py     # Adapter factory
+│   ├── client.py          # Existing server communication client
+│   ├── converter.py       # Data conversion logic
+│   └── models.py          # Data structure definitions
+├── requirements.txt       # Dependencies
 ├── requirements/
-│   └── flask.txt          # Flask版依存関係
-├── sample_server/         # 動作確認用サンプル
-│   ├── mock_chat_server.py  # 模擬チャットサーバー
-│   ├── test_demo.py         # 自動テストスクリプト
-│   ├── start_demo.sh        # 自動デモ起動スクリプト
-│   ├── curl_examples.sh     # プロキシサーバー用cURLサンプル
-│   ├── test_mock_server.sh  # モックサーバー単体テスト
-│   └── quick_test.sh        # モックサーバークイックテスト
-└── tests/                 # テストファイル
-    ├── test_adapter_config.py  # アダプター設定テスト
-    ├── test_adapters.py         # アダプター機能テスト
+│   └── flask.txt          # Flask dependencies
+├── sample_server/         # Operation test samples
+│   ├── mock_chat_server.py  # Mock chat server
+│   ├── test_demo.py         # Automated test script
+│   ├── start_demo.sh        # Automated demo startup script
+│   ├── curl_examples.sh     # cURL samples for proxy server
+│   ├── test_mock_server.sh  # Mock server unit test
+│   └── quick_test.sh        # Mock server quick test
+└── tests/                 # Test files
+    ├── test_adapter_config.py  # Adapter configuration tests
+    ├── test_adapters.py         # Adapter functionality tests
     ├── test_app_flask.py
     ├── test_client.py
     ├── test_config.py
@@ -178,75 +178,75 @@ curl http://localhost:8000/health
     └── test_models.py
 ```
 
-## テスト実行
+## Test Execution
 
 ```bash
-# 全テスト実行（87テスト）
+# Run all tests (87 tests)
 python -m pytest tests/ -v
 
-# 特定のテストファイル実行
-python -m pytest tests/test_app_flask.py -v      # Flask アプリケーション
-python -m pytest tests/test_adapters.py -v       # アダプター機能
-python -m pytest tests/test_adapter_config.py -v # アダプター設定
+# Run specific test files
+python -m pytest tests/test_app_flask.py -v      # Flask application
+python -m pytest tests/test_adapters.py -v       # Adapter functionality
+python -m pytest tests/test_adapter_config.py -v # Adapter configuration
 
-# アダプター関連テストのみ実行
+# Run adapter-related tests only
 python -m pytest tests/test_adapter*.py -v
 ```
 
-## アダプター設定
+## Adapter Configuration
 
-プロキシサーバーは、様々な既存サーバーの入出力形式に対応するため、アダプターアーキテクチャを採用しています。環境変数で簡単に設定できます。
+The proxy server adopts an adapter architecture to support various existing server input/output formats. Easy configuration via environment variables.
 
-### 基本設定
+### Basic Configuration
 
 ```bash
-# アダプタータイプ（通常は変更不要）
+# Adapter type (usually no change needed)
 export ADAPTER_TYPE="openai_compatible"
 
-# リクエストフィールドマッピング
-export REQUEST_MODEL_FIELD="model"          # モデル名フィールド
-export REQUEST_MESSAGES_FIELD="messages"    # メッセージ配列フィールド（必須）
-export REQUEST_TEMPERATURE_FIELD="temperature"  # 温度パラメータフィールド
-export REQUEST_MAX_TOKENS_FIELD="max_tokens"    # 最大トークン数フィールド
-export REQUEST_STREAM_FIELD="stream"            # ストリーミングフラグフィールド
-export REQUEST_STOP_FIELD="stop"                # 停止文字列フィールド
+# Request field mapping
+export REQUEST_MODEL_FIELD="model"          # Model name field
+export REQUEST_MESSAGES_FIELD="messages"    # Message array field (required)
+export REQUEST_TEMPERATURE_FIELD="temperature"  # Temperature parameter field
+export REQUEST_MAX_TOKENS_FIELD="max_tokens"    # Max tokens field
+export REQUEST_STREAM_FIELD="stream"            # Streaming flag field
+export REQUEST_STOP_FIELD="stop"                # Stop string field
 
-# レスポンスフィールドマッピング
-export RESPONSE_CONTENT_FIELD="content"         # コンテンツフィールド（必須）
-export RESPONSE_FINISH_FIELD="finish_reason"    # 完了理由フィールド
-export RESPONSE_MODEL_FIELD="model"             # モデル名フィールド
-export RESPONSE_CREATED_FIELD="created"         # 作成時刻フィールド
+# Response field mapping
+export RESPONSE_CONTENT_FIELD="content"         # Content field (required)
+export RESPONSE_FINISH_FIELD="finish_reason"    # Finish reason field
+export RESPONSE_MODEL_FIELD="model"             # Model name field
+export RESPONSE_CREATED_FIELD="created"         # Creation time field
 ```
 
-### 高度な設定
+### Advanced Configuration
 
 ```bash
-# ストリーミング設定
+# Streaming configuration
 export STREAMING_FORMAT="sse"              # sse, jsonlines, none
-export STREAMING_DATA_PREFIX="data: "      # SSE用データプレフィックス
-export STREAMING_DONE_MARKER="[DONE]"      # 完了マーカー
+export STREAMING_DATA_PREFIX="data: "      # SSE data prefix
+export STREAMING_DONE_MARKER="[DONE]"      # Completion marker
 
-# カスタムヘッダー（JSON形式）
+# Custom headers (JSON format)
 export CUSTOM_HEADERS='{"Authorization": "Bearer your-token", "X-API-Key": "your-key"}'
 
-# デバッグ設定
-export ADAPTER_DEBUG="false"               # アダプターデバッグログの有効化
+# Debug configuration
+export ADAPTER_DEBUG="false"               # Enable adapter debug logs
 ```
 
-### カスタム既存サーバー対応例
+### Custom Existing Server Support Examples
 
-#### 例1: ネストしたレスポンス構造
+#### Example 1: Nested Response Structure
 
 ```bash
-# 既存サーバーが response.choices[0].message.content 形式でレスポンスを返す場合
+# When existing server returns response in response.choices[0].message.content format
 export RESPONSE_CONTENT_FIELD="response.choices[0].message.content"
 export RESPONSE_FINISH_FIELD="response.choices[0].finish_reason"
 ```
 
-#### 例2: 異なるフィールド名
+#### Example 2: Different Field Names
 
 ```bash
-# 既存サーバーが独自のフィールド名を使用する場合
+# When existing server uses custom field names
 export REQUEST_MODEL_FIELD="engine"         # model → engine
 export REQUEST_MESSAGES_FIELD="conversation" # messages → conversation
 export REQUEST_TEMPERATURE_FIELD="randomness" # temperature → randomness
@@ -254,124 +254,124 @@ export RESPONSE_CONTENT_FIELD="response_text"  # content ← response_text
 export RESPONSE_FINISH_FIELD="status"          # finish_reason ← status
 ```
 
-#### 例3: フィールドの無効化
+#### Example 3: Field Deactivation
 
 ```bash
-# 既存サーバーが特定のフィールドをサポートしない場合
-export REQUEST_MAX_TOKENS_FIELD=""          # max_tokensを送信しない
-export REQUEST_STOP_FIELD=""                # stopを送信しない
-export RESPONSE_MODEL_FIELD=""              # モデル名をレスポンスから取得しない
+# When existing server doesn't support specific fields
+export REQUEST_MAX_TOKENS_FIELD=""          # Don't send max_tokens
+export REQUEST_STOP_FIELD=""                # Don't send stop
+export RESPONSE_MODEL_FIELD=""              # Don't get model name from response
 ```
 
-#### 例4: JSON Lines ストリーミング
+#### Example 4: JSON Lines Streaming
 
 ```bash
-# Server-Sent Events以外のストリーミング形式を使用する場合
+# When using streaming formats other than Server-Sent Events
 export STREAMING_FORMAT="jsonlines"
 export STREAMING_DATA_PREFIX=""
 export STREAMING_DONE_MARKER=""
 ```
 
-### アダプター設定の検証
+### Adapter Configuration Validation
 
-設定が正しく適用されているかを確認できます：
+Check if configuration is applied correctly:
 
 ```python
 from core.adapter_config import AdapterConfig
 
-# 設定情報の表示
+# Display configuration information
 info = AdapterConfig.get_adapter_info()
 print(info)
 
-# 設定の妥当性チェック
+# Validate configuration
 try:
     AdapterConfig.validate()
-    print("✓ 設定は有効です")
+    print("✓ Configuration is valid")
 except Exception as e:
-    print(f"✗ 設定エラー: {e}")
+    print(f"✗ Configuration error: {e}")
 ```
 
-## 設定可能な環境変数
+## Configurable Environment Variables
 
-### サーバー設定
+### Server Configuration
 
-| 環境変数 | デフォルト値 | 説明 |
-|----------|-------------|------|
-| EXISTING_SERVER_URL | http://localhost:3000/chat | 既存チャットサーバーのURL |
-| REQUEST_TIMEOUT | 30 | リクエストタイムアウト（秒） |
-| HOST | localhost | サーバーのホスト |
-| PORT | 8000 | サーバーのポート |
-| DEBUG | false | デバッグモード |
-| LOG_LEVEL | INFO | ログレベル |
-| DEFAULT_MODEL | gpt-3.5-turbo | デフォルトモデル名 |
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| EXISTING_SERVER_URL | http://localhost:3000/chat | Existing chat server URL |
+| REQUEST_TIMEOUT | 30 | Request timeout (seconds) |
+| HOST | localhost | Server host |
+| PORT | 8000 | Server port |
+| DEBUG | false | Debug mode |
+| LOG_LEVEL | INFO | Log level |
+| DEFAULT_MODEL | gpt-3.5-turbo | Default model name |
 
-### アダプター設定（詳細は上記参照）
+### Adapter Configuration (See details above)
 
-| 環境変数 | デフォルト値 | 説明 |
-|----------|-------------|------|
-| ADAPTER_TYPE | openai_compatible | アダプタータイプ |
-| REQUEST_MESSAGES_FIELD | messages | メッセージフィールド（必須） |
-| RESPONSE_CONTENT_FIELD | content | レスポンスコンテンツフィールド（必須） |
-| STREAMING_FORMAT | sse | ストリーミング形式 |
-| CUSTOM_HEADERS | {} | カスタムヘッダー（JSON） |
-| ADAPTER_DEBUG | false | アダプターデバッグログ |
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| ADAPTER_TYPE | openai_compatible | Adapter type |
+| REQUEST_MESSAGES_FIELD | messages | Message field (required) |
+| RESPONSE_CONTENT_FIELD | content | Response content field (required) |
+| STREAMING_FORMAT | sse | Streaming format |
+| CUSTOM_HEADERS | {} | Custom headers (JSON) |
+| ADAPTER_DEBUG | false | Adapter debug logs |
 
-## サンプルサーバー
+## Sample Server
 
-動作確認のため、既存チャットサーバーを模擬するサンプルサーバーが含まれています。
+A sample server that simulates existing chat servers is included for operation testing.
 
-### 機能
+### Features
 
-- **非ストリーミング・ストリーミング対応**: OpenAI Chat APIプロキシサーバーの両方のモードをテスト可能
-- **インテリジェントな応答**: ユーザーメッセージの内容に応じて適切な応答を生成
-- **エラーハンドリング**: 無効なリクエストに対する適切なエラー処理
-- **ヘルスチェック**: `/health`エンドポイントでサーバーの状態を確認
+- **Non-streaming & Streaming Support**: Test both modes of OpenAI Chat API proxy server
+- **Intelligent Responses**: Generate appropriate responses based on user message content
+- **Error Handling**: Proper error handling for invalid requests
+- **Health Check**: Check server status via `/health` endpoint
 
-### 使用方法
+### Usage
 
 ```bash
-# 単独で起動
+# Start standalone
 python sample_server/mock_chat_server.py
 
-# 自動デモで起動（推奨）
+# Start with automated demo (recommended)
 cd sample_server && ./start_demo.sh
 
-# モックサーバー単体テスト
-./sample_server/test_mock_server.sh    # 包括的テスト
-./sample_server/quick_test.sh          # クイックテスト
+# Mock server unit tests
+./sample_server/test_mock_server.sh    # Comprehensive test
+./sample_server/quick_test.sh          # Quick test
 ```
 
-### API エンドポイント
+### API Endpoints
 
-- `POST /chat` - チャットエンドポイント
-- `GET /health` - ヘルスチェック
-- `GET /` - API情報表示
+- `POST /chat` - Chat endpoint
+- `GET /health` - Health check
+- `GET /` - API information display
 
-## エラーハンドリング
+## Error Handling
 
-- 既存サーバーへの接続失敗: 503 Service Unavailable
-- リクエストタイムアウト: 504 Gateway Timeout
-- 無効なリクエスト形式: 400 Bad Request
-- その他のエラー: 500 Internal Server Error
+- Connection failure to existing server: 503 Service Unavailable
+- Request timeout: 504 Gateway Timeout
+- Invalid request format: 400 Bad Request
+- Other errors: 500 Internal Server Error
 
-## 開発・デバッグ
+## Development & Debugging
 
-### デバッグモードで起動
+### Start in Debug Mode
 
 ```bash
 export DEBUG="true"
 python app_flask.py
 ```
 
-### ログレベルの変更
+### Change Log Level
 
 ```bash
 export LOG_LEVEL="DEBUG"
 python app_flask.py
 ```
 
-## ライセンス
+## License
 
-使用ライブラリはすべて商用利用可能です：
+All libraries used are commercially available:
 - Flask: BSD-3-Clause
 - requests: Apache-2.0
