@@ -1,5 +1,5 @@
 """
-既存サーバー通信クライアント（アダプター機能付き）
+Existing server communication client with adapter functionality
 """
 import requests
 import json
@@ -13,38 +13,38 @@ from .adapters.factory import get_default_adapter
 
 
 class ExistingServerClient:
-    """既存サーバーとの通信を行うクライアント（アダプター機能付き）"""
+    """Client for communicating with existing servers with adapter functionality"""
     
     def __init__(self, server_url: str, timeout: int = 30, adapter: Optional[BaseAdapter] = None):
         """
         Args:
-            server_url: 既存サーバーのURL
-            timeout: リクエストタイムアウト（秒）
-            adapter: 使用するアダプター（Noneの場合はデフォルトアダプターを使用）
+            server_url: Existing server URL
+            timeout: Request timeout (seconds)
+            adapter: Adapter to use (default adapter used if None)
         """
         self.server_url = server_url
         self.timeout = timeout
         self.adapter = adapter or get_default_adapter()
         self.logger = logging.getLogger(__name__)
         
-        # データコンバーターもアダプター付きで初期化
+        # Initialize data converter with adapter
         self.converter = DataConverter(self.adapter)
     
     def send_request_dict(self, request_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        既存サーバーに辞書形式のリクエストを送信
+        Send dictionary format request to existing server
         
         Args:
-            request_data: 送信するリクエストデータ
+            request_data: Request data to send
             
         Returns:
-            Dict: サーバーからのレスポンス
+            Dict: Response from server
         """
         try:
             self.logger.debug(f"Sending request to {self.server_url}")
             self.logger.debug(f"Request data: {request_data}")
             
-            # カスタムヘッダーを取得
+            # Get custom headers
             headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
@@ -85,21 +85,21 @@ class ExistingServerClient:
             self.logger.error(f"Unexpected error: {e}")
             raise RequestException(f"Unexpected error: {e}")
     
-    # 後方互換性のためのメソッド
+    # Method for backward compatibility
     def send_request(self, request: ExistingServerRequest) -> ExistingServerResponse:
         """
-        既存サーバーに非ストリーミングリクエストを送信
+        Send non-streaming request to existing server
         
         Args:
-            request: 送信するリクエスト
+            request: Request to send
             
         Returns:
-            ExistingServerResponse: サーバーからのレスポンス
+            ExistingServerResponse: Response from server
             
         Raises:
-            ConnectionError: サーバーに接続できない場合
-            Timeout: リクエストがタイムアウトした場合
-            RequestException: その他のHTTPエラー
+            ConnectionError: When unable to connect to server
+            Timeout: When request times out
+            RequestException: Other HTTP errors
         """
         try:
             self.logger.debug(f"Sending request to {self.server_url}")
@@ -144,19 +144,19 @@ class ExistingServerClient:
     
     def send_streaming_request_dict(self, request_data: Dict[str, Any]) -> Generator[Dict[str, Any], None, None]:
         """
-        既存サーバーに辞書形式のストリーミングリクエストを送信
+        Send dictionary format streaming request to existing server
         
         Args:
-            request_data: 送信するリクエストデータ
+            request_data: Request data to send
             
         Yields:
-            Dict: サーバーからのストリーミングレスポンス
+            Dict: Streaming response from server
         """
         try:
             self.logger.debug(f"Sending streaming request to {self.server_url}")
             self.logger.debug(f"Request data: {request_data}")
             
-            # カスタムヘッダーを取得
+            # Get custom headers
             headers = {
                 'Content-Type': 'application/json',
                 'Accept': 'text/event-stream'
@@ -173,7 +173,7 @@ class ExistingServerClient:
             
             response.raise_for_status()
             
-            # ストリーミングレスポンスを処理
+            # Process streaming response
             for line in response.iter_lines(decode_unicode=True):
                 if line:
                     parsed_line = self.converter.parse_streaming_chunk(line)
@@ -202,21 +202,21 @@ class ExistingServerClient:
             self.logger.error(f"Unexpected error: {e}")
             raise RequestException(f"Unexpected error in streaming request: {e}")
     
-    # 後方互換性のためのメソッド
+    # Method for backward compatibility
     def send_streaming_request(self, request: ExistingServerRequest) -> Generator[Dict[str, Any], None, None]:
         """
-        既存サーバーにストリーミングリクエストを送信
+        Send streaming request to existing server
         
         Args:
-            request: 送信するリクエスト
+            request: Request to send
             
         Yields:
-            Dict[str, Any]: サーバーからのストリーミングレスポンス
+            Dict[str, Any]: Streaming response from server
             
         Raises:
-            ConnectionError: サーバーに接続できない場合
-            Timeout: リクエストがタイムアウトした場合
-            RequestException: その他のHTTPエラー
+            ConnectionError: When unable to connect to server
+            Timeout: When request times out
+            RequestException: Other HTTP errors
         """
         try:
             self.logger.debug(f"Sending streaming request to {self.server_url}")
@@ -235,7 +235,7 @@ class ExistingServerClient:
             
             response.raise_for_status()
             
-            # ストリーミングレスポンスを処理
+            # Process streaming response
             for line in response.iter_lines(decode_unicode=True):
                 if line:
                     parsed_line = DataConverter.parse_sse_line(line)
@@ -266,13 +266,13 @@ class ExistingServerClient:
     
     def health_check(self) -> bool:
         """
-        既存サーバーのヘルスチェック
+        Health check for existing server
         
         Returns:
-            bool: サーバーが正常に応答する場合True
+            bool: True if server responds normally
         """
         try:
-            # 簡単なテストリクエストを送信
+            # Send simple test request
             test_request = ExistingServerRequest(
                 model="test",
                 messages=[{"role": "user", "content": "health check"}],
@@ -282,7 +282,7 @@ class ExistingServerClient:
             response = requests.post(
                 self.server_url,
                 json=test_request.to_dict(),
-                timeout=5,  # ヘルスチェックは短いタイムアウト
+                timeout=5,  # Short timeout for health check
                 headers={
                     'Content-Type': 'application/json',
                     'Accept': 'application/json'
@@ -297,10 +297,10 @@ class ExistingServerClient:
     
     def get_server_info(self) -> Dict[str, Any]:
         """
-        サーバー情報を取得
+        Get server information
         
         Returns:
-            Dict[str, Any]: サーバー情報
+            Dict[str, Any]: Server information
         """
         return {
             "server_url": self.server_url,
