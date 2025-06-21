@@ -1,13 +1,13 @@
 """
-設定管理モジュール
-環境変数から設定を読み込み、デフォルト値を提供
+Configuration management module
+Loads settings from environment variables and provides default values
 """
 import os
 from typing import Optional
 
 
 class Config:
-    """アプリケーション設定"""
+    """Application configuration"""
     
     @staticmethod
     def EXISTING_SERVER_URL() -> str:
@@ -40,7 +40,7 @@ class Config:
     
     @classmethod
     def validate(cls) -> None:
-        """設定の検証"""
+        """Validate configuration"""
         if not cls.EXISTING_SERVER_URL():
             raise ValueError("EXISTING_SERVER_URL is required")
         
@@ -52,7 +52,7 @@ class Config:
     
     @classmethod
     def get_config_dict(cls) -> dict:
-        """設定を辞書形式で取得"""
+        """Get configuration as dictionary"""
         return {
             "existing_server_url": cls.EXISTING_SERVER_URL(),
             "request_timeout": cls.REQUEST_TIMEOUT(),

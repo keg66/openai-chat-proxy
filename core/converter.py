@@ -1,7 +1,7 @@
 """
-データ変換ロジック
-OpenAI形式と既存サーバー形式の間でデータを変換
-アダプター機能を使用して様々な既存サーバーに対応
+Data conversion logic
+Converts data between OpenAI format and existing server format
+Supports various existing servers using adapter functionality
 """
 import json
 from typing import Dict, Any, Generator, List, Optional
@@ -15,23 +15,23 @@ from .adapters.base import BaseAdapter
 
 
 class DataConverter:
-    """データ変換クラス（アダプター機能付き）"""
+    """Data conversion class with adapter functionality"""
     
     def __init__(self, adapter: Optional[BaseAdapter] = None):
         """
         Args:
-            adapter: 使用するアダプター（Noneの場合はデフォルトアダプターを使用）
+            adapter: Adapter to use (default adapter used if None)
         """
         self.adapter = adapter or get_default_adapter()
     
     def openai_to_existing_server(self, request: ChatCompletionRequest) -> Dict[str, Any]:
-        """OpenAI形式のリクエストを既存サーバー形式に変換"""
+        """Convert OpenAI format request to existing server format"""
         return self.adapter.transform_request(request)
     
-    # 後方互換性のための静的メソッド（廃止予定）
+    # Static method for backward compatibility (deprecated)
     @staticmethod
     def openai_to_existing_server_legacy(request: ChatCompletionRequest) -> ExistingServerRequest:
-        """OpenAI形式のリクエストを既存サーバー形式に変換（レガシー）"""
+        """Convert OpenAI format request to existing server format (legacy)"""
         messages = []
         for msg in request.messages:
             messages.append({
@@ -52,14 +52,14 @@ class DataConverter:
         server_response: Dict[str, Any],
         original_request: ChatCompletionRequest
     ) -> ChatCompletionResponse:
-        """既存サーバーのレスポンスをOpenAI形式に変換"""
-        # アダプターでまず変換
+        """Convert existing server response to OpenAI format"""
+        # First convert with adapter
         adapter_response = self.adapter.transform_response(server_response, original_request)
         
-        # OpenAI形式に変換
+        # Convert to OpenAI format
         return self._create_openai_response(adapter_response, original_request)
     
-    # 後方互換性のための静的メソッド（廃止予定）
+    # Static method for backward compatibility (deprecated)
     @staticmethod
     def existing_server_to_openai_legacy(
         server_response: ExistingServerResponse,
