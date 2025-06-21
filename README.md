@@ -14,6 +14,7 @@ A proxy server that wraps existing chat servers with an OpenAI API `/v1/chat/com
 ### Supported Endpoints
 
 - `POST /v1/chat/completions` - OpenAI API compatible chat completion endpoint
+- `GET /v1/models` - OpenAI API compatible models list endpoint
 - `GET /health` - Health check endpoint
 
 ### Adapter Architecture
@@ -133,6 +134,12 @@ curl -X POST http://localhost:8000/v1/chat/completions \
     ],
     "stream": true
   }'
+```
+
+### Models List
+
+```bash
+curl http://localhost:8000/v1/models
 ```
 
 ### Health Check
@@ -305,6 +312,17 @@ except Exception as e:
 | LOG_LEVEL | INFO | Log level |
 | DEFAULT_MODEL | gpt-3.5-turbo | Default model name |
 
+### Models API Configuration
+
+| Environment Variable | Default Value | Description |
+|---------------------|---------------|-------------|
+| EXISTING_SERVER_MODELS_URL | "" | Existing server models API URL (empty = use config file) |
+| MODELS_CONFIG_FILE | models.json | Path to models configuration file |
+| MODELS_FALLBACK_ENABLED | true | Enable fallback to config file if server fails |
+| MODELS_RESPONSE_MODELS_FIELD | models | Field containing models array in server response |
+| MODELS_RESPONSE_ID_FIELD | id | Field containing model ID in server response |
+| MODELS_RESPONSE_NAME_FIELD | name | Field containing model name in server response |
+
 ### Adapter Configuration (See details above)
 
 | Environment Variable | Default Value | Description |
@@ -344,8 +362,94 @@ cd sample_server && ./start_demo.sh
 ### API Endpoints
 
 - `POST /chat` - Chat endpoint
+- `GET /models` - Models endpoint (mock)
 - `GET /health` - Health check
 - `GET /` - API information display
+
+## Models API
+
+The proxy server provides a `/v1/models` endpoint that is compatible with OpenAI's models API. It supports two modes of operation:
+
+### 1. Proxy Mode (Existing Server has Models API)
+
+When the existing server provides a models API:
+
+```bash
+# Configure the existing server's models API URL
+export EXISTING_SERVER_MODELS_URL="http://your-server.com/models"
+
+# Optional: Configure field mappings if server uses different field names
+export MODELS_RESPONSE_MODELS_FIELD="data"  # Field containing models array
+export MODELS_RESPONSE_ID_FIELD="model_id"  # Field containing model ID
+export MODELS_RESPONSE_NAME_FIELD="model_name"  # Field containing model name
+```
+
+The proxy will:
+1. Forward requests to the existing server's models API
+2. Transform the response to OpenAI format using field mappings
+3. Return OpenAI-compatible model list
+
+### 2. Configuration File Mode (No Existing Models API)
+
+When the existing server doesn't have a models API, the proxy loads models from a configuration file:
+
+```bash
+# Leave this empty to use config file mode
+export EXISTING_SERVER_MODELS_URL=""
+
+# Specify the models configuration file
+export MODELS_CONFIG_FILE="models.json"
+```
+
+The `models.json` file should contain OpenAI-format model definitions:
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "custom-model-1",
+      "object": "model",
+      "created": 1677610602,
+      "owned_by": "custom",
+      "permission": [],
+      "root": "custom-model-1",
+      "parent": null
+    }
+  ]
+}
+```
+
+### 3. Fallback Behavior
+
+With fallback enabled (default), the proxy will:
+1. Try to get models from existing server (if URL configured)
+2. Fall back to configuration file if server fails
+3. Fall back to default model if config file not found
+
+```bash
+# Enable/disable fallback (default: true)
+export MODELS_FALLBACK_ENABLED="true"
+```
+
+### Example Response
+
+```json
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-3.5-turbo",
+      "object": "model",
+      "created": 1677610602,
+      "owned_by": "openai",
+      "permission": [],
+      "root": "gpt-3.5-turbo",
+      "parent": null
+    }
+  ]
+}
+```
 
 ## Error Handling
 
