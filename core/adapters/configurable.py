@@ -60,11 +60,15 @@ class ConfigurableAdapter(BaseAdapter):
                 self.logger.warning(f"Content field '{self.config.RESPONSE_CONTENT_FIELD()}' not found in response")
             
             # 完了理由フィールド（オプション）
-            finish_reason = "stop"  # デフォルト値
+            finish_reason = None  # ストリーミング用にNoneで初期化
             if self.config.RESPONSE_FINISH_FIELD():
                 server_finish_reason = get_nested_value(server_response, self.config.RESPONSE_FINISH_FIELD())
-                if server_finish_reason:
+                if server_finish_reason is not None:
                     finish_reason = str(server_finish_reason)
+            
+            # 非ストリーミングレスポンスでfinish_reasonがNoneの場合のみデフォルトを使用
+            if finish_reason is None and (not hasattr(original_request, 'stream') or not original_request.stream):
+                finish_reason = "stop"
             
             # モデルフィールド（オプション）
             model = original_request.model  # デフォルトは元のリクエストのモデル

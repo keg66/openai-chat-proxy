@@ -201,9 +201,10 @@ def handle_streaming_request(existing_request, openai_request):
             
             # 既存サーバーからのストリーミングレスポンスを処理
             for server_data in existing_client.send_streaming_request_dict(existing_request):
-                # サーバーデータをチャンクに変換
-                content = server_data.get("content", "")
-                finish_reason = server_data.get("finish_reason")
+                # アダプターを使用してサーバーデータを変換
+                adapter_response = converter.adapter.transform_response(server_data, openai_request)
+                content = adapter_response.content
+                finish_reason = adapter_response.finish_reason
                 
                 chunk = DataConverter.create_streaming_chunk(
                     content=content,
