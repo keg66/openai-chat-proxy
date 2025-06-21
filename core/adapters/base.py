@@ -3,7 +3,7 @@ Base adapter class
 Base class for providing compatibility with different existing servers
 """
 from abc import ABC, abstractmethod
-from typing import Dict, Any, Generator, Optional
+from typing import Dict, Any, Generator, Optional, List
 import logging
 
 from ..models import ChatCompletionRequest, ExistingServerRequest, ExistingServerResponse
@@ -70,6 +70,19 @@ class BaseAdapter(ABC):
         
         Returns:
             Dict: Custom header dictionary
+        """
+        pass
+    
+    @abstractmethod
+    def transform_models_response(self, server_response: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """
+        Transform existing server models response to OpenAI format
+        
+        Args:
+            server_response: Response from existing server models API
+            
+        Returns:
+            List[Dict[str, Any]]: List of model dictionaries in OpenAI format
         """
         pass
     

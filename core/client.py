@@ -307,3 +307,60 @@ class ExistingServerClient:
             "timeout": self.timeout,
             "health": self.health_check()
         }
+    
+    def get_models(self, models_url: str) -> Dict[str, Any]:
+        """
+        Get models from existing server
+        
+        Args:
+            models_url: URL of the models API endpoint
+            
+        Returns:
+            Dict[str, Any]: Response from models API
+            
+        Raises:
+            ConnectionError: When unable to connect to server
+            Timeout: When request times out
+            RequestException: Other HTTP errors
+        """
+        try:
+            self.logger.debug(f"Getting models from {models_url}")
+            
+            # Get custom headers
+            headers = {
+                'Accept': 'application/json'
+            }
+            headers.update(self.converter.get_custom_headers())
+            
+            response = requests.get(
+                models_url,
+                timeout=self.timeout,
+                headers=headers
+            )
+            
+            response.raise_for_status()
+            
+            response_data = response.json()
+            self.logger.debug(f"Models response: {response_data}")
+            
+            return response_data
+            
+        except ConnectionError as e:
+            self.logger.error(f"Connection error: {e}")
+            raise ConnectionError(f"Failed to connect to models API: {e}")
+        
+        except Timeout as e:
+            self.logger.error(f"Request timeout: {e}")
+            raise Timeout(f"Models API request timed out after {self.timeout} seconds")
+        
+        except requests.HTTPError as e:
+            self.logger.error(f"HTTP error: {e}")
+            raise RequestException(f"HTTP error from models API: {e}")
+        
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON decode error: {e}")
+            raise RequestException(f"Invalid JSON response from models API: {e}")
+        
+        except Exception as e:
+            self.logger.error(f"Unexpected error: {e}")
+            raise RequestException(f"Unexpected error in models request: {e}")

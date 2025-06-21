@@ -8,7 +8,8 @@ from typing import Dict, Any, Generator, List, Optional
 from .models import (
     ChatCompletionRequest, ChatCompletionResponse, ChatCompletionChoice,
     ChatCompletionChunk, ChatCompletionChunkChoice, ChatCompletionChunkDelta,
-    ChatCompletionUsage, ChatMessage, ExistingServerRequest, ExistingServerResponse
+    ChatCompletionUsage, ChatMessage, ExistingServerRequest, ExistingServerResponse,
+    Model, ModelsResponse
 )
 from .adapters.factory import get_default_adapter
 from .adapters.base import BaseAdapter
@@ -127,8 +128,14 @@ class DataConverter:
         return self.adapter.parse_streaming_chunk(chunk_line)
     
     def get_custom_headers(self) -> Dict[str, str]:
-        """カスタムヘッダーを取得（アダプター使用）"""
+        """Get custom headers using adapter"""
         return self.adapter.get_custom_headers()
+    
+    def transform_models_response(self, server_response: Dict[str, Any]) -> ModelsResponse:
+        """Transform existing server models response to OpenAI format using adapter"""
+        model_dicts = self.adapter.transform_models_response(server_response)
+        models = [Model.from_dict(model_dict) for model_dict in model_dicts]
+        return ModelsResponse(data=models)
     
     @staticmethod
     def create_streaming_chunk(

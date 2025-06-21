@@ -119,7 +119,15 @@ class TestConfig:
                 "port": 8080,
                 "debug": True,
                 "log_level": "WARNING",
-                "default_model": "gpt-4"
+                "default_model": "gpt-4",
+                "models": {
+                    "existing_server_models_url": "",
+                    "models_config_file": "models.json",
+                    "models_fallback_enabled": True,
+                    "models_response_models_field": "models",
+                    "models_response_id_field": "id",
+                    "models_response_name_field": "name"
+                }
             }
             
             assert config_dict == expected

@@ -1,0 +1,86 @@
+{
+  "object": "list",
+  "data": [
+    {
+      "id": "gpt-3.5-turbo",
+      "object": "model",
+      "created": 1677610602,
+      "owned_by": "openai",
+      "permission": [
+        {
+          "id": "modelperm-M56FXnG1AsIr3SXq8BYPvXJA",
+          "object": "model_permission",
+          "created": 1677610602,
+          "allow_create_engine": false,
+          "allow_sampling": true,
+          "allow_logprobs": true,
+          "allow_search_indices": false,
+          "allow_view": true,
+          "allow_fine_tuning": false,
+          "organization": "*",
+          "group": null,
+          "is_blocking": false
+        }
+      ],
+      "root": "gpt-3.5-turbo",
+      "parent": null
+    },
+    {
+      "id": "gpt-3.5-turbo-0301",
+      "object": "model",
+      "created": 1677610602,
+      "owned_by": "openai",
+      "permission": [
+        {
+          "id": "modelperm-M56FXnG1AsIr3SXq8BYPvXJA",
+          "object": "model_permission",
+          "created": 1677610602,
+          "allow_create_engine": false,
+          "allow_sampling": true,
+          "allow_logprobs": true,
+          "allow_search_indices": false,
+          "allow_view": true,
+          "allow_fine_tuning": false,
+          "organization": "*",
+          "group": null,
+          "is_blocking": false
+        }
+      ],
+      "root": "gpt-3.5-turbo-0301",
+      "parent": null
+    },
+    {
+      "id": "gpt-4",
+      "object": "model",
+      "created": 1687882411,
+      "owned_by": "openai",
+      "permission": [
+        {
+          "id": "modelperm-5kobhGU4xOPVXwOAufe5DAe5",
+          "object": "model_permission",
+          "created": 1687882411,
+          "allow_create_engine": false,
+          "allow_sampling": false,
+          "allow_logprobs": false,
+          "allow_search_indices": false,
+          "allow_view": false,
+          "allow_fine_tuning": false,
+          "organization": "*",
+          "group": null,
+          "is_blocking": false
+        }
+      ],
+      "root": "gpt-4",
+      "parent": null
+    },
+    {
+      "id": "custom-model-1",
+      "object": "model",
+      "created": 1677610602,
+      "owned_by": "custom",
+      "permission": [],
+      "root": "custom-model-1",
+      "parent": null
+    }
+  ]
+}

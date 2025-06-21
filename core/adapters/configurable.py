@@ -3,6 +3,7 @@ Configurable adapter
 Supports various existing servers through environment variable configuration
 """
 import json
+import time
 from typing import Dict, Any, Optional, List
 from .base import BaseAdapter, MappingError, UnsupportedFormatError
 from ..adapter_config import get_nested_value, set_nested_value
@@ -180,5 +181,53 @@ class ConfigurableAdapter(BaseAdapter):
         )
     
     def get_adapter_type(self) -> str:
-        """アダプタータイプを取得"""
+        """Get adapter type"""
         return self.config.ADAPTER_TYPE()
+    
+    def transform_models_response(self, server_response: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Transform existing server models response to OpenAI format"""
+        try:
+            # Get models array from server response
+            models_field = self.config.MODELS_RESPONSE_MODELS_FIELD()
+            server_models = get_nested_value(server_response, models_field)
+            
+            if not server_models or not isinstance(server_models, list):
+                self.logger.warning(f"No models found in field '{models_field}' or not a list")
+                return []
+            
+            openai_models = []
+            for server_model in server_models:
+                try:
+                    # Extract model ID
+                    model_id = get_nested_value(server_model, self.config.MODELS_RESPONSE_ID_FIELD())
+                    if not model_id:
+                        # Fallback to name field if ID field is not found
+                        model_id = get_nested_value(server_model, self.config.MODELS_RESPONSE_NAME_FIELD())
+                    
+                    if not model_id:
+                        self.logger.warning(f"Model ID/name not found in model data: {server_model}")
+                        continue
+                    
+                    # Create OpenAI format model
+                    openai_model = {
+                        "id": str(model_id),
+                        "object": "model",
+                        "created": server_model.get("created", int(time.time())),
+                        "owned_by": server_model.get("owned_by", "existing-server"),
+                        "permission": server_model.get("permission", []),
+                        "root": server_model.get("root", str(model_id)),
+                        "parent": server_model.get("parent", None)
+                    }
+                    
+                    openai_models.append(openai_model)
+                    
+                except Exception as e:
+                    self.logger.warning(f"Failed to transform model: {server_model}, error: {e}")
+                    continue
+            
+            self.logger.debug(f"Transformed {len(openai_models)} models from server response")
+            return openai_models
+            
+        except Exception as e:
+            self.logger.error(f"Failed to transform models response: {e}")
+            return []
