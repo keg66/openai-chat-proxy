@@ -1,5 +1,5 @@
 """
-Flask版 OpenAI Chat API プロキシサーバー
+Flask-based OpenAI Chat API Proxy Server
 """
 import logging
 import json
@@ -13,7 +13,7 @@ from core.converter import DataConverter
 from core.client import ExistingServerClient
 
 
-# ログ設定
+# Logging configuration
 logging.basicConfig(
     level=getattr(logging, Config.LOG_LEVEL().upper(), logging.INFO),
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -22,19 +22,19 @@ logging.basicConfig(
 app = Flask(__name__)
 logger = logging.getLogger(__name__)
 
-# 既存サーバークライアントの初期化
+# Initialize existing server client
 existing_client = ExistingServerClient(
     server_url=Config.EXISTING_SERVER_URL(),
     timeout=Config.REQUEST_TIMEOUT()
 )
 
-# データコンバーターの初期化
+# Initialize data converter
 converter = DataConverter()
 
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    """ヘルスチェックエンドポイント"""
+    """Health check endpoint"""
     try:
         server_health = existing_client.health_check()
         return jsonify({
@@ -56,7 +56,7 @@ def health_check():
 
 @app.route('/v1/chat/completions', methods=['POST'])
 def chat_completions():
-    """OpenAI互換のチャット完了エンドポイント"""
+    """OpenAI-compatible chat completion endpoint"""
     try:
         # リクエストデータの検証
         if not request.is_json:
@@ -128,7 +128,7 @@ def chat_completions():
 
 
 def handle_non_streaming_request(existing_request, openai_request):
-    """非ストリーミングリクエストを処理"""
+    """Handle non-streaming request"""
     try:
         # 既存サーバーにリクエスト送信
         server_response = existing_client.send_request_dict(existing_request)
@@ -185,7 +185,7 @@ def handle_non_streaming_request(existing_request, openai_request):
 
 
 def handle_streaming_request(existing_request, openai_request):
-    """ストリーミングリクエストを処理"""
+    """Handle streaming request"""
     def generate_stream():
         try:
             chunk_id = f"chatcmpl-{openai_request.model}-stream"
@@ -199,9 +199,9 @@ def handle_streaming_request(existing_request, openai_request):
             )
             yield DataConverter.format_sse_chunk(start_chunk)
             
-            # 既存サーバーからのストリーミングレスポンスを処理
+            # Process streaming response from existing server
             for server_data in existing_client.send_streaming_request_dict(existing_request):
-                # アダプターを使用してサーバーデータを変換
+                # Transform server data using adapter
                 adapter_response = converter.adapter.transform_response(server_data, openai_request)
                 content = adapter_response.content
                 finish_reason = adapter_response.finish_reason
@@ -268,7 +268,7 @@ def handle_streaming_request(existing_request, openai_request):
 
 @app.errorhandler(400)
 def bad_request(error):
-    """400エラーハンドラー"""
+    """400 error handler"""
     return jsonify(DataConverter.create_error_response(
         "Bad request",
         "invalid_request_error"
@@ -277,7 +277,7 @@ def bad_request(error):
 
 @app.errorhandler(404)
 def not_found(error):
-    """404エラーハンドラー"""
+    """404 error handler"""
     return jsonify(DataConverter.create_error_response(
         "Not found",
         "not_found_error"
@@ -286,7 +286,7 @@ def not_found(error):
 
 @app.errorhandler(500)
 def internal_error(error):
-    """500エラーハンドラー"""
+    """500 error handler"""
     logger.error(f"Internal server error: {error}")
     return jsonify(DataConverter.create_error_response(
         "Internal server error",
@@ -296,19 +296,19 @@ def internal_error(error):
 
 if __name__ == '__main__':
     try:
-        # 設定の検証
+        # Validate configuration
         Config.validate()
         
         logger.info("Starting Chat Proxy Server (Flask)")
         logger.info(f"Configuration: {Config.get_config_dict()}")
         
-        # 既存サーバーのヘルスチェック
+        # Health check for existing server
         if existing_client.health_check():
             logger.info("Existing server is healthy")
         else:
             logger.warning("Existing server health check failed - server may not be available")
         
-        # Flaskアプリケーションを起動
+        # Start Flask application
         app.run(
             host=Config.HOST(),
             port=Config.PORT(),
