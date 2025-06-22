@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
-[![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/security.yml)
+[![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://pypi.org/project/pip-audit/)
 [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/)
 
 A proxy server that wraps existing chat servers with an OpenAI API `/v1/chat/completions` compatible interface.
@@ -237,8 +237,8 @@ This project uses GitHub Actions for continuous integration and security scannin
 The README includes status badges showing the current state of:
 - [![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml) - Main CI pipeline status
 - [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/) - Python version requirement
-- [![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/security.yml) - Security vulnerability scanning
-- [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/) - Code quality and style
+- [![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://pypi.org/project/pip-audit/) - Security vulnerability scanning tool
+- [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/) - Code quality and style tool
 
 ## Adapter Configuration
 
