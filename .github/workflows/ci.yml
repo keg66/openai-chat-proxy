@@ -128,20 +128,12 @@ jobs:
         pip install -r requirements.txt
         pip install pip-audit bandit
 
-    - name: Debug - Check CI environment dependencies
+    - name: Verify security updates
       run: |
-        echo "=== Python version ==="
-        python --version
-        echo "=== pip version ==="
-        pip --version
         echo "=== setuptools version ==="
         python -c "import setuptools; print('setuptools version:', setuptools.__version__)"
-        echo "=== All installed packages ==="
-        pip list
-        echo "=== pip freeze output ==="
-        pip freeze
-        echo "=== Dependency conflicts check ==="
-        pip check || true
+        echo "=== Dependency check ==="
+        pip check
 
     - name: Run pip-audit for vulnerabilities
       run: |
