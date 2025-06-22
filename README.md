@@ -1,12 +1,17 @@
 # OpenAI Chat API Proxy Server
 
+[![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://pypi.org/project/pip-audit/)
+[![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/)
+
 A proxy server that wraps existing chat servers with an OpenAI API `/v1/chat/completions` compatible interface.
 
 ## Project Overview
 
 - **Purpose**: Make existing chat servers (POST JSON requests via HTTP, return JSON responses in Server-Sent Events format) compatible with OpenAI API
 - **Target Users**: Single-user usage (no need for multiple concurrent connections)
-- **Language**: Python 3.11+
+- **Language**: Python 3.9+
 - **Framework**: Flask (Phase 1)
 
 ## Features
@@ -188,17 +193,52 @@ curl http://localhost:8000/health
 ## Test Execution
 
 ```bash
-# Run all tests (87 tests)
+# Run all tests (104 tests)
 python -m pytest tests/ -v
 
 # Run specific test files
 python -m pytest tests/test_app_flask.py -v      # Flask application
 python -m pytest tests/test_adapters.py -v       # Adapter functionality
 python -m pytest tests/test_adapter_config.py -v # Adapter configuration
+python -m pytest tests/test_models_api.py -v     # Models API
 
 # Run adapter-related tests only
 python -m pytest tests/test_adapter*.py -v
+
+# Run with coverage
+python -m pytest tests/ -v --cov=. --cov-report=term-missing
 ```
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and security scanning:
+
+### Workflows
+
+- **CI**: Runs on push to main and all pull requests
+  - Unit tests across Python 3.9, 3.10, 3.11
+  - Integration tests with mock server
+  - Code linting with flake8
+  - Test coverage reporting
+
+- **PR Check**: Quick validation for pull requests
+  - Fast unit test execution
+  - Basic syntax validation
+  - Configuration validation
+  - Changed files summary
+
+- **Security**: Scheduled security scans
+  - Dependency vulnerability scanning with `pip-audit`
+  - Code security analysis with `bandit`
+  - Weekly scheduled runs and on dependency changes
+
+### Status Badges
+
+The README includes status badges showing the current state of:
+- [![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml) - Main CI pipeline status
+- [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/) - Python version requirement
+- [![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://pypi.org/project/pip-audit/) - Security vulnerability scanning tool
+- [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/) - Code quality and style tool
 
 ## Adapter Configuration
 

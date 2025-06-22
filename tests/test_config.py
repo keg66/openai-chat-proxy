@@ -27,7 +27,7 @@ class TestConfig:
         env_vars = {
             "EXISTING_SERVER_URL": "http://custom-server.com/api",
             "REQUEST_TIMEOUT": "60",
-            "HOST": "0.0.0.0",
+            "HOST": "127.0.0.1",
             "PORT": "9000",
             "DEBUG": "true",
             "LOG_LEVEL": "DEBUG",
@@ -37,7 +37,7 @@ class TestConfig:
         with patch.dict(os.environ, env_vars):
             assert Config.EXISTING_SERVER_URL() == "http://custom-server.com/api"
             assert Config.REQUEST_TIMEOUT() == 60
-            assert Config.HOST() == "0.0.0.0"
+            assert Config.HOST() == "127.0.0.1"
             assert Config.PORT() == 9000
             assert Config.DEBUG() is True
             assert Config.LOG_LEVEL() == "DEBUG"

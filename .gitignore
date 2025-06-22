@@ -1,0 +1,27 @@
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+venv/
+.env
+
+# Test coverage
+.coverage
+coverage.xml
+htmlcov/
+
+# Security scan reports
+*-report.json
+bandit-report.json
+safety-report.json
+pip-audit-report.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
