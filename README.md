@@ -1,7 +1,9 @@
 # OpenAI Chat API Proxy Server
 
 [![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml)
-[![Security](https://github.com/keg66/openai-chat-proxy/workflows/Security/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/security.yml)
+[![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/)
+[![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/security.yml)
+[![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/)
 
 A proxy server that wraps existing chat servers with an OpenAI API `/v1/chat/completions` compatible interface.
 
@@ -226,15 +228,17 @@ This project uses GitHub Actions for continuous integration and security scannin
   - Changed files summary
 
 - **Security**: Scheduled security scans
-  - Dependency vulnerability scanning with `safety` and `pip-audit`
+  - Dependency vulnerability scanning with `pip-audit`
   - Code security analysis with `bandit`
   - Weekly scheduled runs and on dependency changes
 
 ### Status Badges
 
 The README includes status badges showing the current state of:
-- [![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml) - Main CI pipeline
-- [![Security](https://github.com/keg66/openai-chat-proxy/workflows/Security/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/security.yml) - Security scans
+- [![CI](https://github.com/keg66/openai-chat-proxy/workflows/CI/badge.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/ci.yml) - Main CI pipeline status
+- [![Python](https://img.shields.io/badge/python-3.9%2B-blue.svg)](https://www.python.org/downloads/) - Python version requirement
+- [![Security: pip-audit](https://img.shields.io/badge/security-pip--audit-green.svg)](https://github.com/keg66/openai-chat-proxy/actions/workflows/security.yml) - Security vulnerability scanning
+- [![Code style: flake8](https://img.shields.io/badge/code%20style-flake8-black.svg)](https://flake8.pycqa.org/) - Code quality and style
 
 ## Adapter Configuration
 
