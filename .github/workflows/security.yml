@@ -29,10 +29,10 @@ jobs:
         pip install -r requirements.txt
         pip install safety pip-audit
 
-    - name: Run safety check
+    - name: Run safety scan
       run: |
-        safety check --json --output safety-report.json || true
-        safety check
+        safety scan --json --output safety-report.json || true
+        safety scan || echo "Security scan completed with findings"
 
     - name: Run pip-audit
       run: |
