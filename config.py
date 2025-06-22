@@ -38,6 +38,31 @@ class Config:
     def DEFAULT_MODEL() -> str:
         return os.getenv("DEFAULT_MODEL", "gpt-3.5-turbo")
     
+    # Models API configuration
+    @staticmethod
+    def EXISTING_SERVER_MODELS_URL() -> str:
+        return os.getenv("EXISTING_SERVER_MODELS_URL", "")
+    
+    @staticmethod
+    def MODELS_CONFIG_FILE() -> str:
+        return os.getenv("MODELS_CONFIG_FILE", "models.json")
+    
+    @staticmethod
+    def MODELS_FALLBACK_ENABLED() -> bool:
+        return os.getenv("MODELS_FALLBACK_ENABLED", "true").lower() in ("true", "1", "yes", "on")
+    
+    @staticmethod
+    def MODELS_RESPONSE_MODELS_FIELD() -> str:
+        return os.getenv("MODELS_RESPONSE_MODELS_FIELD", "models")
+    
+    @staticmethod
+    def MODELS_RESPONSE_ID_FIELD() -> str:
+        return os.getenv("MODELS_RESPONSE_ID_FIELD", "id")
+    
+    @staticmethod
+    def MODELS_RESPONSE_NAME_FIELD() -> str:
+        return os.getenv("MODELS_RESPONSE_NAME_FIELD", "name")
+    
     @classmethod
     def validate(cls) -> None:
         """Validate configuration"""
@@ -60,5 +85,13 @@ class Config:
             "port": cls.PORT(),
             "debug": cls.DEBUG(),
             "log_level": cls.LOG_LEVEL(),
-            "default_model": cls.DEFAULT_MODEL()
+            "default_model": cls.DEFAULT_MODEL(),
+            "models": {
+                "existing_server_models_url": cls.EXISTING_SERVER_MODELS_URL(),
+                "models_config_file": cls.MODELS_CONFIG_FILE(),
+                "models_fallback_enabled": cls.MODELS_FALLBACK_ENABLED(),
+                "models_response_models_field": cls.MODELS_RESPONSE_MODELS_FIELD(),
+                "models_response_id_field": cls.MODELS_RESPONSE_ID_FIELD(),
+                "models_response_name_field": cls.MODELS_RESPONSE_NAME_FIELD()
+            }
         }

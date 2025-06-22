@@ -78,6 +78,19 @@ class AdapterConfig:
     def REQUEST_TRANSFORM() -> str:
         return os.getenv("REQUEST_TRANSFORM", "none")
     
+    # Models API configuration
+    @staticmethod
+    def MODELS_RESPONSE_MODELS_FIELD() -> str:
+        return os.getenv("MODELS_RESPONSE_MODELS_FIELD", "models")
+    
+    @staticmethod
+    def MODELS_RESPONSE_ID_FIELD() -> str:
+        return os.getenv("MODELS_RESPONSE_ID_FIELD", "id")
+    
+    @staticmethod
+    def MODELS_RESPONSE_NAME_FIELD() -> str:
+        return os.getenv("MODELS_RESPONSE_NAME_FIELD", "name")
+    
     @staticmethod
     def RESPONSE_TRANSFORM() -> str:
         return os.getenv("RESPONSE_TRANSFORM", "none")

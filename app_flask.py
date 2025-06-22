@@ -3,6 +3,7 @@ Flask-based OpenAI Chat API Proxy Server
 """
 import logging
 import json
+import time
 from flask import Flask, request, Response, jsonify, stream_template_string
 from werkzeug.exceptions import BadRequest
 from requests.exceptions import RequestException, Timeout, ConnectionError
@@ -52,6 +53,83 @@ def health_check():
             "status": "unhealthy",
             "error": str(e)
         }), 500
+
+
+@app.route('/v1/models', methods=['GET'])
+def list_models():
+    """OpenAI-compatible models list endpoint"""
+    try:
+        models_url = Config.EXISTING_SERVER_MODELS_URL()
+        
+        if models_url:
+            # Try to get models from existing server
+            try:
+                server_response = existing_client.get_models(models_url)
+                models_response = converter.transform_models_response(server_response)
+                return jsonify(models_response.to_dict())
+                
+            except Exception as e:
+                logger.warning(f"Failed to get models from existing server: {e}")
+                
+                # If fallback is enabled, try to load from config file
+                if not Config.MODELS_FALLBACK_ENABLED():
+                    return jsonify(DataConverter.create_error_response(
+                        f"Failed to get models from existing server: {str(e)}",
+                        "service_unavailable"
+                    )), 503
+        
+        # Load models from configuration file
+        try:
+            import json
+            import os
+            
+            config_file = Config.MODELS_CONFIG_FILE()
+            
+            if os.path.exists(config_file):
+                with open(config_file, 'r', encoding='utf-8') as f:
+                    models_config = json.load(f)
+                
+                # Create ModelsResponse from config
+                from core.models import ModelsResponse
+                models_response = ModelsResponse.from_dict(models_config)
+                return jsonify(models_response.to_dict())
+            else:
+                logger.warning(f"Models config file not found: {config_file}")
+                
+                # Return default model list
+                from core.models import Model, ModelsResponse
+                default_model = Model(
+                    id=Config.DEFAULT_MODEL(),
+                    owned_by="default"
+                )
+                models_response = ModelsResponse(data=[default_model])
+                return jsonify(models_response.to_dict())
+                
+        except Exception as e:
+            logger.error(f"Failed to load models from config: {e}")
+            
+            # Return minimal default response
+            return jsonify({
+                "object": "list",
+                "data": [
+                    {
+                        "id": Config.DEFAULT_MODEL(),
+                        "object": "model",
+                        "created": int(time.time()),
+                        "owned_by": "default",
+                        "permission": [],
+                        "root": Config.DEFAULT_MODEL(),
+                        "parent": None
+                    }
+                ]
+            })
+            
+    except Exception as e:
+        logger.error(f"Unexpected error in list_models: {e}")
+        return jsonify(DataConverter.create_error_response(
+            "Internal server error",
+            "internal_error"
+        )), 500
 
 
 @app.route('/v1/chat/completions', methods=['POST'])

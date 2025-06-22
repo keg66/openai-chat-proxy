@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-動作確認用の模擬チャットサーバー
+Mock chat server for operation testing
 
-既存のチャットサーバーの動作をシミュレートし、
-OpenAI Chat APIプロキシサーバーのテストに使用する
+Simulates existing chat server behavior and is used for testing 
+the OpenAI Chat API proxy server
 """
 import json
 import time
@@ -12,13 +12,13 @@ from flask import Flask, request, Response, jsonify
 
 app = Flask(__name__)
 
-# サンプルレスポンス
+# Sample responses
 SAMPLE_RESPONSES = [
-    "こんにちは！何かお手伝いできることはありますか？",
-    "はい、お答えします。",
-    "面白い質問ですね！詳しく説明させていただきます。",
-    "それについて考えてみましょう。",
-    "了解しました。以下のようになります。",
+    "Hello! Is there anything I can help you with?",
+    "Yes, I'll answer that.",
+    "That's an interesting question! Let me explain in detail.",
+    "Let's think about that.",
+    "Understood. Here's how it works:",
     "Hello! How can I help you today?",
     "That's an interesting question. Let me think about it.",
     "I'd be happy to help you with that.",
@@ -27,28 +27,28 @@ SAMPLE_RESPONSES = [
 ]
 
 def generate_response_content(user_message: str) -> str:
-    """ユーザーメッセージに基づいてレスポンスを生成"""
-    # 簡単な応答ロジック
+    """Generate response based on user message"""
+    # Simple response logic
     message_lower = user_message.lower()
     
     if "hello" in message_lower or "こんにちは" in message_lower:
-        return "こんにちは！お元気ですか？何かお手伝いできることがあれば教えてください。"
+        return "Hello! How are you? Please let me know if there's anything I can help you with."
     elif "thank" in message_lower or "ありがとう" in message_lower:
-        return "どういたしまして！他にも何かご質問があれば遠慮なくお聞きください。"
+        return "You're welcome! Please feel free to ask if you have any other questions."
     elif "weather" in message_lower or "天気" in message_lower:
-        return "申し訳ありませんが、リアルタイムの天気情報は提供できません。お近くの天気予報サービスをご確認ください。"
+        return "I'm sorry, but I cannot provide real-time weather information. Please check your local weather service."
     elif "python" in message_lower:
-        return "Pythonは素晴らしいプログラミング言語ですね！シンプルで読みやすく、多くの分野で活用されています。"
+        return "Python is a wonderful programming language! It's simple, readable, and used in many fields."
     elif "test" in message_lower or "テスト" in message_lower:
-        return "これはテスト用の模擬サーバーからの応答です。プロキシサーバーが正常に動作しています！"
+        return "This is a response from the test mock server. The proxy server is working properly!"
     else:
-        # ランダムなサンプルレスポンス
+        # Random sample response
         base_response = random.choice(SAMPLE_RESPONSES)
-        return f"{base_response}\n\nあなたのメッセージ「{user_message}」についてお答えします。"
+        return f"{base_response}\n\nI'll respond to your message: '{user_message}'."
 
 @app.route('/chat', methods=['POST'])
 def chat_endpoint():
-    """チャットエンドポイント"""
+    """Chat endpoint"""
     try:
         data = request.get_json()
         if not data:
@@ -62,14 +62,14 @@ def chat_endpoint():
         if not messages:
             return jsonify({"error": "No messages provided"}), 400
         
-        # 最後のユーザーメッセージを取得
+        # Get the last user message
         user_message = ""
         for msg in reversed(messages):
             if msg.get('role') == 'user':
                 user_message = msg.get('content', '')
                 break
         
-        # レスポンス生成
+        # Generate response
         response_content = generate_response_content(user_message)
         
         if stream:
@@ -82,8 +82,8 @@ def chat_endpoint():
         return jsonify({"error": "Internal server error"}), 500
 
 def handle_non_streaming_response(content: str, model: str):
-    """非ストリーミングレスポンスを処理"""
-    # 模擬的な処理時間
+    """Handle non-streaming response"""
+    # Simulate processing time
     time.sleep(random.uniform(0.5, 1.5))
     
     response = {
@@ -96,18 +96,18 @@ def handle_non_streaming_response(content: str, model: str):
     return jsonify(response)
 
 def handle_streaming_response(content: str, model: str):
-    """ストリーミングレスポンスを処理"""
+    """Handle streaming response"""
     def generate_stream():
-        # 文字列を単語単位で分割
+        # Split string into words
         words = content.split()
         
-        # 開始チャンク
+        # Start chunk
         yield f"data: {json.dumps({'content': '', 'finish_reason': None, 'model': model})}\n\n"
         
-        # 単語ごとにストリーミング
+        # Stream word by word
         current_content = ""
         for i, word in enumerate(words):
-            # 単語間に短い遅延
+            # Short delay between words
             time.sleep(random.uniform(0.1, 0.3))
             
             current_content += word + " "
@@ -118,7 +118,7 @@ def handle_streaming_response(content: str, model: str):
             }
             yield f"data: {json.dumps(chunk_data, ensure_ascii=False)}\n\n"
         
-        # 終了チャンク
+        # Final chunk
         final_chunk = {
             "content": "",
             "finish_reason": "stop",
@@ -138,25 +138,53 @@ def handle_streaming_response(content: str, model: str):
         }
     )
 
+@app.route('/models', methods=['GET'])
+def list_models():
+    """Mock models endpoint"""
+    return jsonify({
+        "models": [
+            {
+                "id": "mock-model-1",
+                "name": "Mock Model 1",
+                "created": 1677610602,
+                "owned_by": "mock-server"
+            },
+            {
+                "id": "mock-model-2", 
+                "name": "Mock Model 2",
+                "created": 1677610602,
+                "owned_by": "mock-server"
+            },
+            {
+                "id": "gpt-3.5-turbo",
+                "name": "GPT-3.5 Turbo (Mock)",
+                "created": 1677610602,
+                "owned_by": "mock-server"
+            }
+        ]
+    })
+
+
 @app.route('/health', methods=['GET'])
 def health_check():
-    """ヘルスチェックエンドポイント"""
+    """Health check endpoint"""
     return jsonify({
         "status": "healthy",
         "service": "Mock Chat Server",
         "version": "1.0.0",
         "endpoints": {
             "chat": "/chat",
+            "models": "/models",
             "health": "/health"
         }
     })
 
 @app.route('/', methods=['GET'])
 def root():
-    """ルートエンドポイント"""
+    """Root endpoint"""
     return jsonify({
         "service": "Mock Chat Server",
-        "description": "OpenAI Chat API プロキシサーバーのテスト用模擬サーバー",
+        "description": "Mock server for testing OpenAI Chat API proxy server",
         "endpoints": {
             "chat": "POST /chat",
             "health": "GET /health"
