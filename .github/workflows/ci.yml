@@ -130,7 +130,7 @@ jobs:
 
     - name: Run safety scan for vulnerabilities
       run: |
-        safety scan || echo "Security scan completed with findings"
+        safety scan
 
     - name: Run bandit security linter
       run: |
