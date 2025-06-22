@@ -9,7 +9,7 @@ A proxy server that wraps existing chat servers with an OpenAI API `/v1/chat/com
 
 - **Purpose**: Make existing chat servers (POST JSON requests via HTTP, return JSON responses in Server-Sent Events format) compatible with OpenAI API
 - **Target Users**: Single-user usage (no need for multiple concurrent connections)
-- **Language**: Python 3.11+
+- **Language**: Python 3.9+
 - **Framework**: Flask (Phase 1)
 
 ## Features
@@ -214,7 +214,7 @@ This project uses GitHub Actions for continuous integration and security scannin
 ### Workflows
 
 - **CI**: Runs on push to main and all pull requests
-  - Unit tests across Python 3.8, 3.9, 3.10, 3.11
+  - Unit tests across Python 3.9, 3.10, 3.11
   - Integration tests with mock server
   - Code linting with flake8
   - Test coverage reporting
