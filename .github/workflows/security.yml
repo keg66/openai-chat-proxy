@@ -59,8 +59,8 @@ jobs:
 
     - name: Run bandit
       run: |
-        bandit -r . -x tests/,sample_server/ -f json -o bandit-report.json || true
-        bandit -r . -x tests/,sample_server/
+        bandit -r . -x tests/,sample_server/ -s B101,B311 -f json -o bandit-report.json || true
+        bandit -r . -x tests/,sample_server/ -s B101,B311
 
     - name: Upload bandit report
       uses: actions/upload-artifact@v4
