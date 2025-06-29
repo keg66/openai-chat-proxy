@@ -1,21 +1,21 @@
-# Python 3.11ベースイメージを使用
+# Use Python 3.11 slim base image
 FROM python:3.11-slim
 
-# curlをインストール（ヘルスチェック用）
+# Install curl for health checks (required by docker-compose healthcheck)
 RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
-# 作業ディレクトリを設定
+# Set working directory
 WORKDIR /app
 
-# requirements.txtをコピーして依存関係をインストール
+# Copy requirements.txt and install dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# アプリケーションファイルをコピー
+# Copy application files
 COPY . .
 
-# ポート8000を開放
+# Expose port 8000
 EXPOSE 8000
 
-# app_flask.pyを実行
+# Run the Flask application
 CMD ["python", "app_flask.py"]
