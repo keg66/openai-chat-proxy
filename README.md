@@ -81,6 +81,85 @@ python sample_server/test_demo.py
 ./sample_server/curl_examples.sh
 ```
 
+## Docker Deployment
+
+For easy deployment with Docker, use the included Docker configuration:
+
+### Prerequisites
+
+- Docker and Docker Compose installed
+- Sample server running (for testing)
+
+### Quick Start with Docker
+
+```bash
+# 1. Start sample server (in separate terminal)
+python3 sample_server/mock_chat_server.py
+
+# 2. Build and start proxy server container
+docker-compose up --build
+
+# 3. Test the proxy server
+curl http://localhost:8081/health
+curl -X POST http://localhost:8081/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {"role": "user", "content": "Hello, Docker!"}
+    ]
+  }'
+```
+
+### Docker Configuration
+
+The included `docker-compose.yaml` configures:
+
+- **Container Port**: 8000 (internal)
+- **Host Port**: 8081 (external access)
+- **Environment Variables**:
+  - `HOST=0.0.0.0` (allow external connections)
+  - `EXISTING_SERVER_URL=http://172.17.0.1:3005/chat` (Docker bridge network)
+  - `FLASK_ENV=production`
+
+### Customizing Docker Configuration
+
+Edit `docker-compose.yaml` to customize:
+
+```yaml
+services:
+  chat-proxy:
+    build: .
+    ports:
+      - "8081:8000"  # Change external port here
+    environment:
+      - EXISTING_SERVER_URL=http://your-server-url/chat
+      - REQUEST_TIMEOUT=60
+      - LOG_LEVEL=DEBUG
+```
+
+### Docker Commands
+
+```bash
+# Build and start in background
+docker-compose up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop containers
+docker-compose down
+
+# Rebuild after code changes
+docker-compose up --build --force-recreate
+```
+
+### Network Configuration Notes
+
+- **Linux**: Use `172.17.0.1` (Docker bridge gateway) to access host services
+- **macOS/Windows**: Use `host.docker.internal` to access host services
+- **Custom Networks**: Adjust `EXISTING_SERVER_URL` accordingly
+
 ## Installation and Setup
 
 ### 1. Virtual Environment Setup
@@ -116,7 +195,19 @@ The server starts at `http://localhost:8000`.
 ### Non-streaming Chat
 
 ```bash
+# Standard installation
 curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {"role": "user", "content": "Hello, world!"}
+    ],
+    "temperature": 0.7
+  }'
+
+# Docker deployment (note port 8081)
+curl -X POST http://localhost:8081/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-3.5-turbo",
@@ -130,7 +221,19 @@ curl -X POST http://localhost:8000/v1/chat/completions \
 ### Streaming Chat
 
 ```bash
+# Standard installation
 curl -X POST http://localhost:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {"role": "user", "content": "Hello, world!"}
+    ],
+    "stream": true
+  }'
+
+# Docker deployment (note port 8081)
+curl -X POST http://localhost:8081/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
     "model": "gpt-3.5-turbo",
@@ -144,13 +247,21 @@ curl -X POST http://localhost:8000/v1/chat/completions \
 ### Models List
 
 ```bash
+# Standard installation
 curl http://localhost:8000/v1/models
+
+# Docker deployment
+curl http://localhost:8081/v1/models
 ```
 
 ### Health Check
 
 ```bash
+# Standard installation
 curl http://localhost:8000/health
+
+# Docker deployment
+curl http://localhost:8081/health
 ```
 
 ## Project Structure
@@ -159,6 +270,8 @@ curl http://localhost:8000/health
 .
 ├── app_flask.py           # Flask main application
 ├── config.py              # Configuration management
+├── Dockerfile             # Docker container configuration
+├── docker-compose.yaml    # Docker Compose service definition
 ├── core/                  # Common business logic
 │   ├── __init__.py
 │   ├── adapter_config.py  # Adapter configuration management
