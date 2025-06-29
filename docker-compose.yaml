@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  chat-proxy:
+    build: .
+    ports:
+      - "8081:8000"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_DEBUG=false
+      - HOST=0.0.0.0
+      - EXISTING_SERVER_URL=http://172.17.0.1:3005/chat
+    volumes:
+      # 設定ファイルをマウント（オプション）
+      - ./config.py:/app/config.py:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
